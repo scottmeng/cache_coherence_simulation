@@ -1,0 +1,29 @@
+summary of project requirement:
+
+1. read from data files
+2. data is stored in the format of "label  value"
+3. label can be the following values:
+	0	fetch instruction
+	2	read memory data
+	3 	write data in memory
+
+4. value is a 32-bit hex address
+5. memory address is 32 bit
+6. memory access is 16-bit
+7. write-back, write-allocate
+8. all caches are initially empty
+9. data bus uses first come first serve arbitration policy
+10. feching a block from memory takes 10 cycles
+11. flushing a dirty cache block is free
+12. the caches are blocking: if there is a cache miss, the cache cannot process further requests from the processor.
+
+
+basic structure of simulation tool:
+
+1. command line interfacing module
+	
+	taking in command line instructions in the format of 
+
+		coherence "protocol" "input_file" "no_of_processors" "cache_size" "associativity" "block_size"
+
+2. 
