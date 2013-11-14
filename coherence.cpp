@@ -20,8 +20,6 @@ class cacheBlock {
 		vector<int> addresses;
 		int numOfUnits;
 		status blockStatus;
-		
-		
 
 		cacheBlock(int blockSize) {
 			numOfUnits = blockSize / 2;
