@@ -5,9 +5,18 @@
 // All rights reserved
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <vector>
+#include <iostream>
+#include <string>
 
 using namespace std;
+
+#define DRAGON_PROTOCOL "DRAGON"
+#define MESI_PROTOCOL "MESI"
+
+#define FTT_FILE "FTT"
+#define WEATHER_FILE "WEATHER"
 
 // to be added
 class cacheBlock {
@@ -79,19 +88,73 @@ class cache {
 		}
 };
 
-int main() {
+int main(int argc, char * argv[]) {	
+	// user inputs
+	int noProcessors, blockSize, cacheSize, associativity;
+	char * usrProtocol, * inputFile;
+	bool isDragon = false, isWeather = false;
+
+	// performance statistics
 
 	// read user inputs
 	// cache-size, isAssociative, #processors, block-size, input-file
 
+	printf("debug");
+
+	if(argc != 7) {
+		printf("Please follow the format specified: 'coherence protocol input_file no_processors cache_size associativity block_size'.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	usrProtocol = argv[1];
+	inputFile = argv[2];
+	noProcessors = atoi(argv[3]);
+	cacheSize = atoi(argv[4]);
+	associativity = atoi(argv[5]);
+	blockSize = atoi(argv[6]);
+
+	if(strncmp(usrProtocol, DRAGON_PROTOCOL, sizeof(DRAGON_PROTOCOL))) {
+		isDragon = true;
+	}
+
 	// initialize cache block for all processors (#processors)
 	// using parameters: cache-size, isAssociative, block-size
 
+exit(0);
 	// fopen, read file * #processors
+	FILE * files[noProcessors];
+	char * indiFileName, * fileIndex;
 
-	// read single instruction from each processor
-	// serialize memory access (if any) 
+	for(int i=1; i<=noProcessors; i++) {
+		strcpy(indiFileName, inputFile);
+		sprintf(fileIndex, "%d", i);
+		strcat(indiFileName, fileIndex);
+		strcat(indiFileName, ".prg");
 
+		printf(indiFileName);
+		files[i] = fopen(indiFileName, "r");
+	}
+
+
+	while(1) {
+		
+		// read single instruction from each processor
+		// serialize memory access (if any) 
+
+		// if it is instruction reference 
+		// simply increment cycle counter
+
+		// if it is memory reference
+		// check if it is memory read
+
+			// if it is memory read
+			// check isCacheHit
+
+
+
+	}
+
+	// output statistics
 
 	return 1;
 }
