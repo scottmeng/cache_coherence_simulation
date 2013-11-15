@@ -89,6 +89,7 @@ class cache {
 };
 
 int main(int argc, char * argv[]) {	
+
 	// user inputs
 	int noProcessors, blockSize, cacheSize, associativity;
 	char * usrProtocol, * inputFile;
@@ -98,8 +99,6 @@ int main(int argc, char * argv[]) {
 
 	// read user inputs
 	// cache-size, isAssociative, #processors, block-size, input-file
-
-	printf("debug");
 
 	if(argc != 7) {
 		printf("Please follow the format specified: 'coherence protocol input_file no_processors cache_size associativity block_size'.\n");
@@ -120,21 +119,22 @@ int main(int argc, char * argv[]) {
 	// initialize cache block for all processors (#processors)
 	// using parameters: cache-size, isAssociative, block-size
 
-exit(0);
 	// fopen, read file * #processors
 	FILE * files[noProcessors];
-	char * indiFileName, * fileIndex;
+	char indiFileName[20], * fileIndex;
 
 	for(int i=1; i<=noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
 		sprintf(fileIndex, "%d", i);
+
 		strcat(indiFileName, fileIndex);
 		strcat(indiFileName, ".prg");
 
 		printf(indiFileName);
-		files[i] = fopen(indiFileName, "r");
+		//files[i] = fopen(indiFileName, "r");
 	}
 
+	exit(0);		// for testing purpose
 
 	while(1) {
 		
