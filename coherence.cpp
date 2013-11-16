@@ -149,9 +149,14 @@ int main(int argc, char * argv[]) {
 
 			// if it is memory read
 			// check isCacheHit
+			// add time penalty
+			// swap in cache block
 
-
-
+			// if it is memory write
+			// check isCacheHit
+			// add time penalty
+			// swap in cache block
+			// modify block status
 	}
 
 	// output statistics
