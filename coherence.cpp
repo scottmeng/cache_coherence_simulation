@@ -55,6 +55,7 @@ class cache {
 		int _associativity;
 
 		int _height;
+		int _width;
 		int _numOfBlocks;		
 
 		vector<vector <cacheBlock> > _cacheBlocks;
@@ -66,11 +67,12 @@ class cache {
 			_associativity = associativity;
 
 			// compute width and height
-			_numOfBlocks = cacheSize / blockSize;
-			_height = _numOfBlocks / associativity;
+			_numOfBlocks = _cacheSize / _blockSize;
+			_width = _associativity;
+			_height = _numOfBlocks / _associativity;
 
 			// initialize all cache blocks using dirty data
-			for(int i = 0; i < associativity; i++) {
+			for(int i = 0; i < _width; i++) {
 				vector<cacheBlock> column;
 				for(int j = 0; j < _height; j++) {
 					cacheBlock dirtyBlock = cacheBlock(_blockSize);
