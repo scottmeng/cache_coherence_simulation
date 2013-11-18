@@ -22,8 +22,9 @@ class cacheBlock {
 		int tag;
 		int numOfWords;
 		status blockStatus;
+		int lru;
 
-		cacheBlock(int blockSize);
+		cacheBlock(int);
 };
 
 #endif

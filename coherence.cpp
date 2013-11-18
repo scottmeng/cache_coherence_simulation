@@ -111,7 +111,8 @@ int main(int argc, char * argv[]) {
 		files[i] = fopen(indiFileName, "r");
 	}
 
-	exit(0);		// for testing purpose
+	// cache testCache(cacheSize, blockSize, associativity);
+	cache c(1,2,3);
 
 	while(1) {
 		

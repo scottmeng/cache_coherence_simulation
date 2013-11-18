@@ -24,7 +24,10 @@ class cache{
 
 		vector<vector <cacheBlock> > _cacheBlocks;
 
+		int getRowIndex(int addr);
+
 	public:
+		cache() {}
 		cache(int cacheSize, int blockSize, int associativity);
 		
 		bool isReadHit(int addr);
@@ -32,6 +35,5 @@ class cache{
 		void readCache(int addr);
 		void writeCache(int addr);
 };
-
 
 #endif

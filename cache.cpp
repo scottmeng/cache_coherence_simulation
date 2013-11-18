@@ -6,9 +6,8 @@
 
 #include <vector>
 #include "cache.h"
-#include "cacheBlock.h"
 
-cache :: cache(int cacheSize, int blockSize, int associativity) {
+cache::cache(int cacheSize, int blockSize, int associativity) {
 	_cacheSize = cacheSize;
 	_blockSize = blockSize;
 	_associativity = associativity;

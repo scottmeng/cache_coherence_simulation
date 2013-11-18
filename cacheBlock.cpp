@@ -1,8 +1,9 @@
 #include "cacheBlock.h"
 
 
-cacheBlock :: cacheBlock(int blockSize) {
+cacheBlock::cacheBlock(int blockSize) {
 	numOfWords = blockSize / 2;
 	tag = 0;
 	blockStatus = INVALID;
+	lru = 0;
 }
