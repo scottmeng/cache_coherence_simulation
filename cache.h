@@ -26,6 +26,11 @@ class cache{
 
 	public:
 		cache(int cacheSize, int blockSize, int associativity);
+		
+		bool isReadHit(int addr);
+		bool isWriteHit(int addr);
+		void readCache(int addr);
+		void writeCache(int addr);
 };
 
 

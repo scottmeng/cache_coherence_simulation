@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string>
 
+#include "cache.h"
+
 using namespace std;
 
 #define DRAGON_PROTOCOL "DRAGON"
@@ -18,83 +20,6 @@ using namespace std;
 #define FTT_FILE "FTT"
 #define WEATHER_FILE "WEATHER"
 
-/*
- *	blockStatus : indicates the status of the cache block
- *	numOfUnits : number of words
- *	tag : identifier number
- */
-class cacheBlock {
-	public:
-		// define enum for cache_unit status
-		enum status {
-			INVALID, MODIFIED, SHARED, EXCLUSIVE
-		};
-
-		int tag;
-		int numOfWords;
-		status blockStatus;
-
-		cacheBlock(int blockSize) {
-			numOfWords = blockSize / 2;
-			tag = 0;
-			blockStatus = INVALID;
-		}
-};
-
-/*
- * 	word size : 16 bits = 2 bytes	
- *	# of lines : cache_size / (block_size * associativity)		- height of 2D array
- *	# of bytes in one line : block_size * associativity 		
- * 	# of cache units in one line : block_size * associativity / 2 - width of 2D array
- */
-
-class cache {
-	private:
-		int _cacheSize;
-		int _blockSize;
-		int _associativity;
-
-		int _height;
-		int _width;
-		int _numOfBlocks;		
-
-		vector<vector <cacheBlock> > _cacheBlocks;
-
-	public:
-		cache(int cacheSize, int blockSize, int associativity) {
-			_cacheSize = cacheSize;
-			_blockSize = blockSize;
-			_associativity = associativity;
-
-			// compute width and height
-			_numOfBlocks = _cacheSize / _blockSize;
-			_width = _associativity;
-			_height = _numOfBlocks / _associativity;
-
-			// initialize all cache blocks using dirty data
-			for(int i = 0; i < _width; i++) {
-				vector<cacheBlock> column;
-				for(int j = 0; j < _height; j++) {
-					cacheBlock dirtyBlock = cacheBlock(_blockSize);
-					column.push_back(dirtyBlock);
-				}
-				_cacheBlocks.push_back(column);
-			}
-
-		}
-
-		// check if the requested memory block is present in cache
-		bool isCacheHit(int address) {
-
-
-			return false;
-		}
-
-		// calculate the row index of the corresponding 
-		int calRowNum(int address) {
-			return 0;
-		}
-};
 
 /*
  * check if user inputs are still valid
