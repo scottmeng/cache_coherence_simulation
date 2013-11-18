@@ -18,11 +18,7 @@ using namespace std;
 #define FTT_FILE "FTT"
 #define WEATHER_FILE "WEATHER"
 
-/*
- *	blockStatus : indicates the status of the cache block
- *	numOfUnits : number of words
- *	tag : identifier number
- */
+// to be added
 class cacheBlock {
 	public:
 		// define enum for cache_unit status
@@ -30,13 +26,15 @@ class cacheBlock {
 			INVALID, MODIFIED, SHARED, EXCLUSIVE
 		};
 
+		int numOfUnits;
 		int tag;
-		int numOfWords;
 		status blockStatus;
 
 		cacheBlock(int blockSize) {
-			numOfWords = blockSize / 2;
-			tag = 0;
+			numOfUnits = blockSize / 2;
+			for(int i = 0; i < numOfUnits; i++) {
+				addresses.push_back(0);
+			}
 			blockStatus = INVALID;
 		}
 };
@@ -57,7 +55,7 @@ class cache {
 		int _height;
 		int _numOfBlocks;		
 
-		vector<vector <cacheBlock> > _cacheBlocks;
+		vector<cacheBlock> _cacheBlocks;
 
 	public:
 		cache(int cacheSize, int blockSize, int associativity) {
@@ -67,16 +65,12 @@ class cache {
 
 			// compute width and height
 			_numOfBlocks = cacheSize / blockSize;
-			_height = _numOfBlocks / associativity;
+			_height = cacheSize / (blockSize * associativity);
 
 			// initialize all cache blocks using dirty data
-			for(int i = 0; i < associativity; i++) {
-				vector<cacheBlock> column;
-				for(int j = 0; j < _height; j++) {
-					cacheBlock dirtyBlock = cacheBlock(_blockSize);
-					column.push_back(dirtyBlock);
-				}
-				_cacheBlocks.push_back(column);
+			for(int i = 0; i < _numOfBlocks; i++) {
+				cacheBlock dirtyBlock(_blockSize);
+				_cacheBlocks.push_back(dirtyBlock);
 			}
 
 		}
