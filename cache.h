@@ -30,9 +30,9 @@ class cache{
 		cache() {}
 		cache(int cacheSize, int blockSize, int associativity);
 		
-		bool isReadHit(int addr);
+		bool isReadHit(int addr, int cycle);
 		bool isWriteHit(int addr);
-		void readCache(int addr);
+		void readCache(int addr, int cycle);
 		void writeCache(int addr);
 };
 

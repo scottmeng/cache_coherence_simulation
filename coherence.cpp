@@ -109,7 +109,7 @@ int main(int argc, char * argv[]) {
 	// using parameters: cache-size, isAssociative, block-size
 
 	// fopen, read file * #processors
-	FILE * files[noProcessors];
+	FILE * files[8];
 	char indiFileName[20], * fileIndex;
 
 	for(int i=1; i<=noProcessors; i++) {
@@ -152,8 +152,8 @@ int main(int argc, char * argv[]) {
 		// add time penalty
 		// swap in cache block
 		if(instrType == 2) {
-			if(!simpleCache.isReadHit(addr)) {
-				simpleCache.readCache(addr);
+			if(!simpleCache.isReadHit(addr, cycle)) {
+				simpleCache.readCache(addr, cycle);
 				wait = 10;
 				continue;
 			}

@@ -3,7 +3,7 @@
 
 #include "cache.h"
 
-class dragonCache : class cache {
+class dragonCache : public cache {
 
 	
 	
