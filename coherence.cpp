@@ -60,6 +60,14 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 	return true;
 } 
 
+int readInstrType() {
+	return 0;
+}
+
+int readAddr() {
+	return 0;
+}
+
 int main(int argc, char * argv[]) {	
 
 	// user inputs
@@ -68,6 +76,10 @@ int main(int argc, char * argv[]) {
 	bool isDragon = false, isWeather = false;
 
 	// performance statistics
+
+	// count of CPU cycles
+	int wait = 0, cycle = 0;
+	int instrType, addr;
 
 	// read user inputs
 	// cache-size, isAssociative, #processors, block-size, input-file
@@ -111,30 +123,54 @@ int main(int argc, char * argv[]) {
 		files[i] = fopen(indiFileName, "r");
 	}
 
-	// cache testCache(cacheSize, blockSize, associativity);
-	cache c(1,2,3);
+	//cache simpleCache(cacheSize, blockSize, associativity);
+	cache simpleCache;
 
 	while(1) {
 		
+		// new CPU cycle
+		cycle += 1;
+
+		// empty cycles
+		if(wait > 0 ) {
+			wait -= 1;
+			continue;
+		}
+
 		// read single instruction from each processor
-		// serialize memory access (if any) 
+		instrType = readInstrType();
+		addr = readAddr();
 
 		// if it is instruction reference 
 		// simply increment cycle counter
+		if(instrType == 0) {
+			continue;
+		}
 
-		// if it is memory reference
-		// check if it is memory read
+		// if it is memory read
+		// check isCacheHit
+		// add time penalty
+		// swap in cache block
+		if(instrType == 2) {
+			if(!simpleCache.isReadHit(addr)) {
+				simpleCache.readCache(addr);
+				wait = 10;
+				continue;
+			}
+		}
 
-			// if it is memory read
-			// check isCacheHit
-			// add time penalty
-			// swap in cache block
-
-			// if it is memory write
-			// check isCacheHit
-			// add time penalty
-			// swap in cache block
-			// modify block status
+		// if it is memory write
+		// check isCacheHit
+		// add time penalty
+		// swap in cache block
+		// modify block status
+		if(instrType == 3) {
+			if(!simpleCache.isWriteHit(addr)) {
+				simpleCache.writeCache(addr);
+				wait = 10;
+				continue;
+			}
+		}
 	}
 
 	// output statistics
