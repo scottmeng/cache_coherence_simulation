@@ -151,7 +151,8 @@ int main(int argc, char * argv[]) {
 
 	// fopen, read file * #processors
 	FILE * files[8];
-	char indiFileName[20], * fileIndex;
+	char indiFileName[20];
+	char * fileIndex = "";
 
 	for(int i = 1; i <= noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
