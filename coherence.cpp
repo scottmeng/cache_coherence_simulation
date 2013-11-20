@@ -81,6 +81,21 @@ int main(int argc, char * argv[]) {
 	int wait = 0, cycle = 0;
 	int instrType, addr;
 
+	// ================ for debug purpose only ====================
+
+	protocol = "DRAGON";
+	inputFile = "FFT";
+	noProcessors = 1;
+	cacheSize = 1024;
+	associativity = 4;
+	blockSize = 8;
+
+	// ================ for debug purpose only ====================
+
+	/************************************************
+	 ***** uncomment this section when releasing ****
+	 ************************************************
+
 	// read user inputs
 	// cache-size, isAssociative, #processors, block-size, input-file
 	if(argc != 7) {
@@ -94,6 +109,10 @@ int main(int argc, char * argv[]) {
 	cacheSize = atoi(argv[4]);
 	associativity = atoi(argv[5]);
 	blockSize = atoi(argv[6]);
+
+	************************************************
+	***** uncomment this section when releasing ****
+	************************************************/
 
 	// check if inputs are valid
 	if(!areInputsValid(protocol, inputFile, noProcessors, 
@@ -112,7 +131,7 @@ int main(int argc, char * argv[]) {
 	FILE * files[8];
 	char indiFileName[20], * fileIndex;
 
-	for(int i=1; i<=noProcessors; i++) {
+	for(int i = 1; i <= noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
 		sprintf(fileIndex, "%d", i);
 
