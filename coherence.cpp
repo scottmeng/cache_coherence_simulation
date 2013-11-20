@@ -93,9 +93,13 @@ int main(int argc, char * argv[]) {
 	bool isDragon = false, isWeather = false;
 
 	// performance statistics
+	int cycle = 0;
+	int numOfInstr = 0;
+	int numOfDataAccess = 0;
+	int numOfDataMiss = 0;
 
 	// count of CPU cycles
-	int wait = 0, cycle = 0;
+	int wait = 0;
 
 	// ================ for debug purpose only ====================
 
@@ -185,12 +189,22 @@ int main(int argc, char * argv[]) {
 		if(!readInstr(files[0], curInstr)) {
 			break;
 		}
+		numOfInstr += 1;
+		
+		if((numOfInstr % 100000) == 0) {
+			printf("-");
+		}
+
+		if(numOfInstr == 7451715) {
+			int test = 0;
+		}
 		
 		// if it is instruction reference 
 		// simply increment cycle counter
 		if(curInstr.instrType == 0) {
 			continue;
 		}
+		numOfDataAccess += 1;
 
 		// if it is memory read
 		// check isCacheHit
@@ -200,8 +214,10 @@ int main(int argc, char * argv[]) {
 			if(!simpleCache.isReadHit(curInstr.addr, cycle)) {
 				simpleCache.readCache(curInstr.addr, cycle);
 				wait = 10;
-				continue;
+				numOfDataMiss += 1;
+				//printf("Data read miss \n");
 			}
+			continue;
 		}
 
 		// if it is memory write
@@ -213,18 +229,26 @@ int main(int argc, char * argv[]) {
 			if(!simpleCache.isWriteHit(curInstr.addr,cycle)) {
 				simpleCache.writeCache(curInstr.addr,cycle);
 				wait = 10;
-				continue;
+				numOfDataMiss += 1;
+				//printf("Data write miss \n");
 			}
+			continue;
 		}
 	}
 
 	// output statistics
-
+	printf("Total cycle is: %d\n", cycle);
+	printf("Total number of instructions is: %d\n", numOfInstr);
+	printf("Total number of data access is: %d\n", numOfDataAccess);
+	printf("Total number of data miss is: %d\n", numOfDataMiss);
 
 	// close files
-	for(int i=1; i<=noProcessors; i++) {
+	for(int i = 0; i < noProcessors; i++) {
 		fclose(files[i]);
 	}
+
+	// hold screen
+	while(1) {}
 
 	return 1;
 }

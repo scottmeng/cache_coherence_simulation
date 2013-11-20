@@ -14,18 +14,18 @@ mesiCache::mesiCache(int cacheSize, int blockSize, int associativity) {
     _height = _numOfBlocks / _associativity;
 
     // initialize all cache blocks using dirty data
-    for(int i = 0; i < _width; i++) {
-        vector<cacheBlock> column;
-        for(int j = 0; j < _height; j++) {
+    for(int i = 0; i < _height ; i++) {
+        vector<cacheBlock> row;
+        for(int j = 0; j <_width; j++) {
             cacheBlock dirtyBlock = cacheBlock(_blockSize);
-            column.push_back(dirtyBlock);
+            row.push_back(dirtyBlock);
         }
-        _cacheBlocks.push_back(column);
+        _cacheBlocks.push_back(row);
     }
 
 }
 
-bool mesiCache::isReadHit(int addr, int cycle){
+bool mesiCache::isReadHit(unsigned addr, int cycle){
 	int index;
 	int tag;
 	index = (addr / (_blockSize / 2)) % _height;
@@ -40,7 +40,7 @@ bool mesiCache::isReadHit(int addr, int cycle){
 	return false;
 }
 
-bool mesiCache::isWriteHit(int addr, int cycle){
+bool mesiCache::isWriteHit(unsigned addr, int cycle){
 	int index;
     int tag;
     index = (addr / (_blockSize / 2)) % _height;
@@ -49,14 +49,14 @@ bool mesiCache::isWriteHit(int addr, int cycle){
     for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
         if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
             _cacheBlocks[index][i].lru = cycle;
-			_cacheBlocks[index][i].blockStatus = cacheBlock::EXCLUSIVE;
+			_cacheBlocks[index][i].blockStatus = cacheBlock::MODIFIED;
             return true;
         }
     }
     return false;
 }
 
-void mesiCache::readCache(int addr, int cycle){
+void mesiCache::readCache(unsigned addr, int cycle){
 	int index;
     int tag;
     int minLRU = cycle + 1;
@@ -80,7 +80,7 @@ void mesiCache::readCache(int addr, int cycle){
 
 }
 
-void mesiCache::writeCache(int addr, int cycle){
+void mesiCache::writeCache(unsigned addr, int cycle){
 	int index;
     int tag;
     int minLRU = cycle + 1;

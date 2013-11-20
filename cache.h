@@ -24,16 +24,16 @@ class cache{
 
 		vector<vector <cacheBlock> > _cacheBlocks;
 
-		int getRowIndex(int addr);
+		int getRowIndex(unsigned addr);
 
 	public:
 		cache() {}
 		cache(int cacheSize, int blockSize, int associativity);
 
-		bool virtual isReadHit(int addr, int cycle);
-		bool virtual isWriteHit(int addr, int cycle);
-		void virtual readCache(int addr, int cycle);
-		void virtual writeCache(int addr, int cycle);
+		bool virtual isReadHit(unsigned addr, int cycle);
+		bool virtual isWriteHit(unsigned addr, int cycle);
+		void virtual readCache(unsigned addr, int cycle);
+		void virtual writeCache(unsigned addr, int cycle);
 };
 
 #endif
