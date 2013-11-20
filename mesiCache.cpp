@@ -31,7 +31,7 @@ bool mesiCache::isReadHit(unsigned addr, int cycle){
 	index = (addr / (_blockSize / 2)) % _height;
 	tag = (addr / (_blockSize / 2)) / _height;
 
-	for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
+	for(int i = 0; i < _width; i++) {
 		if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
 			_cacheBlocks[index][i].lru = cycle;
 			return true;
@@ -46,7 +46,7 @@ bool mesiCache::isWriteHit(unsigned addr, int cycle){
     index = (addr / (_blockSize / 2)) % _height;
     tag = (addr / (_blockSize / 2)) / _height;
 
-    for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
+    for(int i = 0; i < _width; i++) {
         if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
             _cacheBlocks[index][i].lru = cycle;
 			_cacheBlocks[index][i].blockStatus = cacheBlock::MODIFIED;
@@ -64,15 +64,18 @@ void mesiCache::readCache(unsigned addr, int cycle){
     index = (addr / (_blockSize / 2)) % _height;
     tag = (addr / (_blockSize / 2)) / _height;
 
-    for(int i = 0; i < _cacheBlocks[index].size(); i++) {
+    for(int i = 0; i < _width; i++) {
         if(_cacheBlocks[index][i].blockStatus == cacheBlock::INVALID) {
             changeBlock = i;
+			break;
         } else {
-            minLRU = (minLRU < _cacheBlocks[index][i].lru) ? minLRU : _cacheBlocks[index][i].lru;
-            changeBlock = i;
-        }
+			if(minLRU > _cacheBlocks[index][i].lru) {
+				minLRU = _cacheBlocks[index][i].lru;
+				changeBlock = i;
+			} 
+		}
     }
-    if(changeBlock > 0){
+    if(changeBlock > -1){
         _cacheBlocks[index][changeBlock].tag = tag;
         _cacheBlocks[index][changeBlock].lru = cycle;
         _cacheBlocks[index][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
@@ -88,15 +91,18 @@ void mesiCache::writeCache(unsigned addr, int cycle){
     index = (addr / (_blockSize / 2)) % _height;
     tag = (addr / (_blockSize / 2)) / _height;
 
-    for(int i = 0; i < _cacheBlocks[index].size(); i++) {
+    for(int i = 0; i < _width; i++) {
         if(_cacheBlocks[index][i].blockStatus == cacheBlock::INVALID) {
             changeBlock = i;
+			break;
         } else {
-            minLRU = (minLRU < _cacheBlocks[index][i].lru) ? minLRU : _cacheBlocks[index][i].lru;
-            changeBlock = i;
+			if(minLRU > _cacheBlocks[index][i].lru) {
+				minLRU = _cacheBlocks[index][i].lru;
+				changeBlock = i;
+			}   
         }
     }
-    if(changeBlock > 0){
+    if(changeBlock > -1){
         _cacheBlocks[index][changeBlock].tag = tag;
         _cacheBlocks[index][changeBlock].lru = cycle;
         _cacheBlocks[index][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
