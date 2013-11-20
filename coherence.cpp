@@ -63,7 +63,7 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 int readInstrType(FILE * file) {
 	char buf[20];
 
-	if(fget(buf, sizeof(buf), file)) {
+	if(fgets(buf, sizeof(buf), file)) {
 		int instrType;
 		int size = sscanf(buf, "%d", &instrType);
 
@@ -78,7 +78,7 @@ int readInstrType(FILE * file) {
 int readAddr(FILE * file) {
 	char buf[20];
 
-	if(fget(buf, sizeof(buf), file)) {
+	if(fgets(buf, sizeof(buf), file)) {
 		int addr;
 		int size = sscanf(buf, "%d", &addr);
 
@@ -164,7 +164,7 @@ int main(int argc, char * argv[]) {
 
 		// if any of the files cannot be opened
 		// exit the program
-		if(!file[i]) {
+		if(!files[i]) {
 			printf("could not open %s \n", indiFileName);
 			exit(EXIT_FAILURE);
 		}
@@ -185,8 +185,8 @@ int main(int argc, char * argv[]) {
 		}
 
 		// read single instruction from each processor
-		instrType = readInstrType(file[i]);
-		addr = readAddr(file[i]);
+		instrType = readInstrType(files[0]);
+		addr = readAddr(files[0]);
 
 		// if it is instruction reference 
 		// simply increment cycle counter
