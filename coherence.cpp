@@ -60,11 +60,33 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 	return true;
 } 
 
-int readInstrType() {
+int readInstrType(FILE * file) {
+	char buf[20];
+
+	if(fget(buf, sizeof(buf), file)) {
+		int instrType;
+		int size = sscanf(buf, "%d", &instrType);
+
+		if(size == 1) {
+			return instrType;
+		}
+	}
+
 	return 0;
 }
 
-int readAddr() {
+int readAddr(FILE * file) {
+	char buf[20];
+
+	if(fget(buf, sizeof(buf), file)) {
+		int addr;
+		int size = sscanf(buf, "%d", &addr);
+
+		if(size == 1) {
+			return addr;
+		}
+	}
+
 	return 0;
 }
 
@@ -138,8 +160,14 @@ int main(int argc, char * argv[]) {
 		strcat(indiFileName, fileIndex);
 		strcat(indiFileName, ".prg");
 
-		printf(indiFileName);
 		files[i] = fopen(indiFileName, "r");
+
+		// if any of the files cannot be opened
+		// exit the program
+		if(!file[i]) {
+			printf("could not open %s \n", indiFileName);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	//cache simpleCache(cacheSize, blockSize, associativity);
@@ -157,8 +185,8 @@ int main(int argc, char * argv[]) {
 		}
 
 		// read single instruction from each processor
-		instrType = readInstrType();
-		addr = readAddr();
+		instrType = readInstrType(file[i]);
+		addr = readAddr(file[i]);
 
 		// if it is instruction reference 
 		// simply increment cycle counter
