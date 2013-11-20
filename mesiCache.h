@@ -6,6 +6,8 @@ using namespace std;
 
 class mesiCache : public cache{
 public:
+	bool blocked;
+
 	mesiCache(){}
 	mesiCache(int cacheSize, int blockSize, int associativity);
 	bool isReadHit(unsigned addr, int cycle);

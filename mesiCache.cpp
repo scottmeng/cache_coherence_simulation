@@ -23,6 +23,7 @@ mesiCache::mesiCache(int cacheSize, int blockSize, int associativity) {
         _cacheBlocks.push_back(row);
     }
 
+	blocked = false;
 }
 
 bool mesiCache::isReadHit(unsigned addr, int cycle){

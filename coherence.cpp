@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <queue>
 
 #include "cache.h"
 #include "mesiCache.h"
@@ -31,6 +32,20 @@ struct instruction {
 		addr = 0;
 	}
 };
+
+struct busRequest{
+	int prIndex;
+	unsigned addr;
+	int countDown;
+	int requestType;		// 0 for mem to cache, 1 for cache to cache
+
+	busRequest(int inPrIndex, unsigned inAddr, int inRequestType) {
+		prIndex = inPrIndex;
+		addr = inAddr;
+		countDown = -1;
+		requestType = inRequestType;
+	}
+}
 
 /*
  * check if user inputs are still valid
@@ -94,12 +109,14 @@ int main(int argc, char * argv[]) {
 
 	// performance statistics
 	int cycle = 0;
-	int numOfInstr = 0;
-	int numOfDataAccess = 0;
-	int numOfDataMiss = 0;
+	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses;
 
 	// count of CPU cycles
 	int wait = 0;
+
+	// bus
+	queue<busRequest> inBuffer, outBuffer;
+	vector<busRequest> processingRequests;
 
 	// ================ for debug purpose only ====================
 
@@ -169,71 +186,128 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	mesiCache simpleCache(cacheSize, blockSize, associativity);
-	instruction curInstr;
+	vector<mesiCache> caches;
+	vector<instruction> curInstrs;
+	vector<bool> finished;
+
+	// initialize caches, instructions and performance statistics
+	for(int i = 0; i < noProcessors; i++) {
+		mesiCache simpleCache(cacheSize, blockSize, associativity);
+		caches.push_back(simpleCache);
+
+		instruction curInstr;
+		curInstrs.push_back(curInstr);
+
+		finished.push_back(false);
+		numOfCycles.push_back(0);
+		numOfDataAccesses.push_back(0);
+		numOfDataMisses.push_back(0);
+	}
 
 	while(1) {
 		
 		// new CPU cycle
 		cycle += 1;
+		vector<busRequest> requests;
 
-		// empty cycles
-		if(wait > 0 ) {
-			wait -= 1;
-			continue;
-		}
-
-		// read single instruction from each processor
-		//instrType = readInstrType(files[0]);
-		//addr = readAddr(files[0]);
-		if(!readInstr(files[0], curInstr)) {
-			break;
-		}
-		numOfInstr += 1;
-		
-		if((numOfInstr % 100000) == 0) {
-			printf("-");
-		}
-
-		if(numOfInstr == 7451715) {
-			int test = 0;
-		}
-		
-		// if it is instruction reference 
-		// simply increment cycle counter
-		if(curInstr.instrType == 0) {
-			continue;
-		}
-		numOfDataAccess += 1;
-
-		// if it is memory read
-		// check isCacheHit
-		// add time penalty
-		// swap in cache block
-		if(curInstr.instrType == 2) {
-			if(!simpleCache.isReadHit(curInstr.addr, cycle)) {
-				simpleCache.readCache(curInstr.addr, cycle);
-				wait = 10;
-				numOfDataMiss += 1;
-				//printf("Data read miss \n");
+		// for every processor
+		for(int prIndex = 0; prIndex < noProcessors; prIndex ++) {
+			
+			// if the processor is still waiting for data
+			// skip this cycle
+			if(caches[prIndex].blocked) {
+				continue;
 			}
-			continue;
+
+			// read single instruction from each processor
+			// if there is no more instruction
+			// assign
+			if(!readInstr(files[prIndex], curInstrs[prIndex])) {
+				if(!finished[prIndex]) {
+					numOfCycles[prIndex] = cycle;
+				}
+				continue;
+			}
+
+			// if it is instruction reference 
+			// simply increment cycle counter
+			if(curInstrs[prIndex].instrType == 0) {
+				continue;
+			}
+
+			// if it is a memory hit
+			// perform state transition
+			// notify other processors if needed
+			// let all other processors respond
+			if(caches[prIndex].isCacheHit(curInstrs[prIndex])){
+				
+				bool isShared = false;
+
+				// check if the same cache block exists in other caches
+				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
+					if(newPrIndex != prIndex && caches[newPrIndex].isCacheHit(curInstrs[prIndex])) {
+						isShared = true;
+					}
+				}
+
+				// perform state transition
+				transactionType transType = caches[prIndex].stateTransit(curInstrs[prIndex], isShared);
+
+				// other processors respond to bus transaction
+				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
+					if(newPrIndex != prIndex) {
+						caches[newPrIndex].respondToTransaction(transType, curInstrs[prIndex]);
+					}
+				}
+			} else {
+
+				// generate bus request and block current processor
+				busRequest request(prIndex, curInstrs[prIndex].addr, 0);
+				requests.push_back(request);
+				caches[prIndex].blocked = true;
+			}
 		}
 
-		// if it is memory write
-		// check isCacheHit
-		// add time penalty
-		// swap in cache block
-		// modify block status
-		if(curInstr.instrType == 3) {
-			if(!simpleCache.isWriteHit(curInstr.addr,cycle)) {
-				simpleCache.writeCache(curInstr.addr,cycle);
-				wait = 10;
-				numOfDataMiss += 1;
-				//printf("Data write miss \n");
-			}
-			continue;
+		// randomize the sequence of bus requests
+		// and push them into the queue
+		while(requests.size() > 0){
+			int index = rand()%(requests.size());
+			inBuffer.push(requests[index]);
+			requests.erase(requests.begin()+index);
 		}
+
+		// if any of the requests processing right now is ready
+		// push them into the out buffer
+		// and remove from processing request list
+		for(int i = 0; i < processingRequests.size(); i++) {
+			processingRequests[i].countDown -= 1;
+			if(processingRequests[i].countDown == 0) {
+				outBuffer.push(processingRequests[i]);
+				processingRequests.erase(processingRequests.begin() + i);
+			}
+		}
+
+		// put the request onto shared data bus
+		busRequest curRequest = outBuffer.front();
+		outBuffer.pop();
+
+		// load cache block in the corresponding cache
+		// and unlock the cache
+		caches[curRequest.prIndex].loadCache(curRequest.addr);
+		caches[curRequest.prIndex].blocked = false;
+
+		busRequest newRequest = inBuffer.front();
+		inBuffer.pop();
+
+		// set request latency based on request type
+		if(newRequest.requestType == 0) {
+			newRequest.countDown = 10;
+		} else {
+			newRequest.countDown = 1;
+		}
+
+		// start processing a new request
+		processingRequests.push_back(newRequest);
 	}
 
 	// output statistics

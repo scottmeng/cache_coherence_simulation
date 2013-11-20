@@ -30,6 +30,11 @@ class cache{
 		cache() {}
 		cache(int cacheSize, int blockSize, int associativity);
 
+		bool uniIsReadHit(unsigned addr, int cycle);
+		bool uniIsWriteHit(unsigned addr, int cycle);
+		void uniReadCache(unsigned addr, int cycle);
+		void uniWriteCache(unsigned addr, int cycle);
+
 		bool virtual isReadHit(unsigned addr, int cycle);
 		bool virtual isWriteHit(unsigned addr, int cycle);
 		void virtual readCache(unsigned addr, int cycle);
