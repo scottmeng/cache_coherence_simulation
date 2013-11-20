@@ -11,6 +11,7 @@
 #include <string>
 
 #include "cache.h"
+#include "mesiCache.h"
 
 using namespace std;
 
@@ -164,7 +165,7 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	cache simpleCache(cacheSize, blockSize, associativity);
+	mesiCache simpleCache(cacheSize, blockSize, associativity);
 	instruction curInstr;
 
 	while(1) {
@@ -209,8 +210,8 @@ int main(int argc, char * argv[]) {
 		// swap in cache block
 		// modify block status
 		if(curInstr.instrType == 3) {
-			if(!simpleCache.isWriteHit(curInstr.addr)) {
-				simpleCache.writeCache(curInstr.addr);
+			if(!simpleCache.isWriteHit(curInstr.addr,cycle)) {
+				simpleCache.writeCache(curInstr.addr,cycle);
 				wait = 10;
 				continue;
 			}

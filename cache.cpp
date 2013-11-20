@@ -29,60 +29,15 @@ cache::cache(int cacheSize, int blockSize, int associativity) {
 }
 
 bool cache::isReadHit(int addr, int cycle) {
-    int index;
-    int tag;
-    index = (addr / (_blockSize / 2)) % _height;
-    tag = (addr / (_blockSize / 2)) / _height;
-
-    for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
-        if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
-            _cacheBlocks[index][i].lru = cycle;
-            return true;
-        }
-    }
-    return false;
+	return false;
 }
 bool cache::isWriteHit(int addr, int cycle) {
-	int index;
-    int tag;
-    index = (addr / (_blockSize / 2)) % _height;
-    tag = (addr / (_blockSize / 2)) / _height;
-
-    for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
-        if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
-            _cacheBlocks[index][i].lru = cycle;
-			_cacheBlocks[index][i].blockStatus = cacheBlock::EXECLUSIVE;
-            return true;
-        }
-    }
-    return false;
+	return false;
 }
 // Assume read miss, put the addr into the cache
 void cache::readCache(int addr, int cycle) {
-    int index;
-    int tag;
-    int minLRU = cycle + 1;
-    int changeBlock = -1;
-    index = (addr / (_blockSize / 2)) % _height;
-    tag = (addr / (_blockSize / 2)) / _height;
-
-    for(int i = 0; i < _cacheBlocks[index].size(); i++) {
-        if(_cacheBlocks[index][i].blockStatus == cacheBlock::INVALID) {
-            changeBlock = i;
-        } else {
-            minLRU = (minLRU < _cacheBlocks[index][i].lru) ? minLRU : _cacheBlocks[index][i].lru;
-            changeBlock = i;
-        }
-    }
-    if(changeBlock > 0){
-        _cacheBlocks[index][changeBlock].tag = tag;
-        _cacheBlocks[index][changeBlock].lru = cycle;
-        _cacheBlocks[index][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
-    }
-
-
-
+	return ;
 }
-void cache::writeCache(int addr) {
-
+void cache::writeCache(int addr, int cycle) {
+	return;
 }

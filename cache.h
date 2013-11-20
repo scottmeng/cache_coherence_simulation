@@ -13,7 +13,7 @@
 using namespace std;
 
 class cache{
-	private:
+	protected:
 		int _cacheSize;
 		int _blockSize;
 		int _associativity;
@@ -31,9 +31,9 @@ class cache{
 		cache(int cacheSize, int blockSize, int associativity);
 
 		bool virtual isReadHit(int addr, int cycle);
-		bool virtual isWriteHit(int addr);
+		bool virtual isWriteHit(int addr, int cycle);
 		void virtual readCache(int addr, int cycle);
-		void virtual writeCache(int addr);
+		void virtual writeCache(int addr, int cycle);
 };
 
 #endif
