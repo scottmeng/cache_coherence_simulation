@@ -138,7 +138,7 @@ int main(int argc, char * argv[]) {
 
 	// check if inputs are valid
 	if(!areInputsValid(protocol, inputFile, noProcessors, 
-					   cacheSize, associativity, blockSize)) {
+					   blockSize, cacheSize, associativity)) {
 		exit(EXIT_FAILURE);
 	}
 
