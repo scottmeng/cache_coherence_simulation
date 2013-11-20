@@ -6,8 +6,8 @@
 class dragonCache : public cache {
 
 public:
-    bool isWriteHit(int addr, int cycle);
-    void writeCache(int addr, int cycle);
+    void readCache(int addr, int cycle, int hitSet, bool shared);
+    void writeCache(int addr, int cycle, int hitSet, bool shared);
 
 };
 

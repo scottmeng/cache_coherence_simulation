@@ -13,27 +13,29 @@
 using namespace std;
 
 class cache{
-	protected:
-		int _cacheSize;
-		int _blockSize;
-		int _associativity;
+    protected:
+        int _cacheSize;
+        int _blockSize;
+        int _associativity;
 
-		int _height;
-		int _width;
-		int _numOfBlocks;		
+        int _height;
+        int _width;
+        int _numOfBlocks;		
 
-		vector<vector <cacheBlock> > _cacheBlocks;
+        vector<vector <cacheBlock> > _cacheBlocks;
 
-		int getRowIndex(unsigned addr);
+        int getRowIndex(unsigned addr);
 
-	public:
-		cache() {}
-		cache(int cacheSize, int blockSize, int associativity);
+    public:
+        cache() {}
+        cache(int cacheSize, int blockSize, int associativity);
 
-		bool virtual isReadHit(unsigned addr, int cycle);
-		bool virtual isWriteHit(unsigned addr, int cycle);
-		void virtual readCache(unsigned addr, int cycle);
-		void virtual writeCache(unsigned addr, int cycle);
+        bool virtual isReadHit(unsigned addr, int cycle);
+        bool virtual isWriteHit(unsigned addr, int cycle);
+        void virtual readCache(unsigned addr, int cycle);
+        void virtual writeCache(unsigned addr, int cycle);
+
+        int isCacheHit(unsigned addr);
 };
 
 #endif
