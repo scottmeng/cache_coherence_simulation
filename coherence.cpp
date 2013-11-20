@@ -152,11 +152,11 @@ int main(int argc, char * argv[]) {
 	// fopen, read file * #processors
 	FILE * files[8];
 	char indiFileName[20];
-	char * fileIndex = "";
+	char fileIndex[2] = "";
 
-	for(int i = 1; i <= noProcessors; i++) {
+	for(int i = 0; i < noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
-		sprintf(fileIndex, "%d", i);
+		sprintf(fileIndex, "%d", i+1);
 
 		strcat(indiFileName, fileIndex);
 		strcat(indiFileName, ".prg");
