@@ -47,7 +47,7 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 		return false;
 	}
 
-	if((usrBlockSize % 16) != 0) {
+	if((usrBlockSize % 2) != 0) {
 		printf("Block size must be a multiple of 16(default word size). Please try again.\n");
 		return false;
 	}
@@ -60,11 +60,33 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 	return true;
 } 
 
-int readInstrType() {
+int readInstrType(FILE * file) {
+	char buf[20];
+
+	if(fgets(buf, sizeof(buf), file)) {
+		int instrType;
+		int size = sscanf(buf, "%d", &instrType);
+
+		if(size == 1) {
+			return instrType;
+		}
+	}
+
 	return 0;
 }
 
-int readAddr() {
+int readAddr(FILE * file) {
+	char buf[20];
+
+	if(fgets(buf, sizeof(buf), file)) {
+		int addr;
+		int size = sscanf(buf, "%d", &addr);
+
+		if(size == 1) {
+			return addr;
+		}
+	}
+
 	return 0;
 }
 
@@ -81,6 +103,21 @@ int main(int argc, char * argv[]) {
 	int wait = 0, cycle = 0;
 	int instrType, addr;
 
+	// ================ for debug purpose only ====================
+
+	protocol = "DRAGON";
+	inputFile = "FFT";
+	noProcessors = 1;
+	cacheSize = 1024;
+	associativity = 4;
+	blockSize = 8;
+
+	// ================ for debug purpose only ====================
+
+	/************************************************
+	 ***** uncomment this section when releasing ****
+	 ************************************************
+
 	// read user inputs
 	// cache-size, isAssociative, #processors, block-size, input-file
 	if(argc != 7) {
@@ -95,9 +132,13 @@ int main(int argc, char * argv[]) {
 	associativity = atoi(argv[5]);
 	blockSize = atoi(argv[6]);
 
+	************************************************
+	***** uncomment this section when releasing ****
+	************************************************/
+
 	// check if inputs are valid
 	if(!areInputsValid(protocol, inputFile, noProcessors, 
-					   cacheSize, associativity, blockSize)) {
+					   blockSize, cacheSize, associativity)) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -110,17 +151,24 @@ int main(int argc, char * argv[]) {
 
 	// fopen, read file * #processors
 	FILE * files[8];
-	char indiFileName[20], * fileIndex;
+	char indiFileName[20];
+	char * fileIndex = "";
 
-	for(int i=1; i<=noProcessors; i++) {
+	for(int i = 1; i <= noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
 		sprintf(fileIndex, "%d", i);
 
 		strcat(indiFileName, fileIndex);
 		strcat(indiFileName, ".prg");
 
-		printf(indiFileName);
 		files[i] = fopen(indiFileName, "r");
+
+		// if any of the files cannot be opened
+		// exit the program
+		if(!files[i]) {
+			printf("could not open %s \n", indiFileName);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	//cache simpleCache(cacheSize, blockSize, associativity);
@@ -138,8 +186,8 @@ int main(int argc, char * argv[]) {
 		}
 
 		// read single instruction from each processor
-		instrType = readInstrType();
-		addr = readAddr();
+		instrType = readInstrType(files[0]);
+		addr = readAddr(files[0]);
 
 		// if it is instruction reference 
 		// simply increment cycle counter
