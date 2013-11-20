@@ -47,7 +47,7 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 		return false;
 	}
 
-	if((usrBlockSize % 16) != 0) {
+	if((usrBlockSize % 2) != 0) {
 		printf("Block size must be a multiple of 16(default word size). Please try again.\n");
 		return false;
 	}
