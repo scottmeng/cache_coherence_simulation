@@ -21,6 +21,16 @@ using namespace std;
 #define WEATHER_FILE "WEATHER"
 
 
+struct instruction {
+	int instrType;
+	unsigned addr;
+
+	instruction() {
+		instrType = 0;
+		addr = 0;
+	}
+};
+
 /*
  * check if user inputs are still valid
  * prompt users of the correct input format
@@ -60,34 +70,18 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 	return true;
 } 
 
-int readInstrType(FILE * file) {
+bool readInstr(FILE * file, instruction &newInstr) {
 	char buf[20];
 
 	if(fgets(buf, sizeof(buf), file)) {
-		int instrType;
-		int size = sscanf(buf, "%d", &instrType);
+		int size = sscanf(buf, "%d %x", &newInstr.instrType, &newInstr.addr);
 
-		if(size == 1) {
-			return instrType;
+		if(size == 2) {
+			return true;
 		}
 	}
 
-	return 0;
-}
-
-int readAddr(FILE * file) {
-	char buf[20];
-
-	if(fgets(buf, sizeof(buf), file)) {
-		int addr;
-		int size = sscanf(buf, "%d", &addr);
-
-		if(size == 1) {
-			return addr;
-		}
-	}
-
-	return 0;
+	return false;
 }
 
 int main(int argc, char * argv[]) {	
@@ -101,7 +95,6 @@ int main(int argc, char * argv[]) {
 
 	// count of CPU cycles
 	int wait = 0, cycle = 0;
-	int instrType, addr;
 
 	// ================ for debug purpose only ====================
 
@@ -152,11 +145,11 @@ int main(int argc, char * argv[]) {
 	// fopen, read file * #processors
 	FILE * files[8];
 	char indiFileName[20];
-	char * fileIndex = "";
+	char fileIndex[2] = "";
 
-	for(int i = 1; i <= noProcessors; i++) {
+	for(int i = 0; i < noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
-		sprintf(fileIndex, "%d", i);
+		sprintf(fileIndex, "%d", i+1);
 
 		strcat(indiFileName, fileIndex);
 		strcat(indiFileName, ".prg");
@@ -171,8 +164,8 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	//cache simpleCache(cacheSize, blockSize, associativity);
-	cache simpleCache;
+	cache simpleCache(cacheSize, blockSize, associativity);
+	instruction curInstr;
 
 	while(1) {
 		
@@ -186,12 +179,15 @@ int main(int argc, char * argv[]) {
 		}
 
 		// read single instruction from each processor
-		instrType = readInstrType(files[0]);
-		addr = readAddr(files[0]);
-
+		//instrType = readInstrType(files[0]);
+		//addr = readAddr(files[0]);
+		if(!readInstr(files[0], curInstr)) {
+			break;
+		}
+		
 		// if it is instruction reference 
 		// simply increment cycle counter
-		if(instrType == 0) {
+		if(curInstr.instrType == 0) {
 			continue;
 		}
 
@@ -199,9 +195,9 @@ int main(int argc, char * argv[]) {
 		// check isCacheHit
 		// add time penalty
 		// swap in cache block
-		if(instrType == 2) {
-			if(!simpleCache.isReadHit(addr, cycle)) {
-				simpleCache.readCache(addr, cycle);
+		if(curInstr.instrType == 2) {
+			if(!simpleCache.isReadHit(curInstr.addr, cycle)) {
+				simpleCache.readCache(curInstr.addr, cycle);
 				wait = 10;
 				continue;
 			}
@@ -212,9 +208,9 @@ int main(int argc, char * argv[]) {
 		// add time penalty
 		// swap in cache block
 		// modify block status
-		if(instrType == 3) {
-			if(!simpleCache.isWriteHit(addr,cycle)) {
-				simpleCache.writeCache(addr,cycle);
+		if(curInstr.instrType == 3) {
+			if(!simpleCache.isWriteHit(curInstr.addr)) {
+				simpleCache.writeCache(curInstr.addr);
 				wait = 10;
 				continue;
 			}
