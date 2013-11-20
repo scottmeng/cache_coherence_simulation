@@ -11,6 +11,7 @@
 #include <string>
 
 #include "cache.h"
+#include "mesiCache.h"
 
 using namespace std;
 
@@ -20,6 +21,16 @@ using namespace std;
 #define FTT_FILE "FTT"
 #define WEATHER_FILE "WEATHER"
 
+
+struct instruction {
+	int instrType;
+	unsigned addr;
+
+	instruction() {
+		instrType = 0;
+		addr = 0;
+	}
+};
 
 /*
  * check if user inputs are still valid
@@ -60,34 +71,18 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 	return true;
 } 
 
-int readInstrType(FILE * file) {
+bool readInstr(FILE * file, instruction &newInstr) {
 	char buf[20];
 
 	if(fgets(buf, sizeof(buf), file)) {
-		int instrType;
-		int size = sscanf(buf, "%d", &instrType);
+		int size = sscanf(buf, "%d %x", &newInstr.instrType, &newInstr.addr);
 
-		if(size == 1) {
-			return instrType;
+		if(size == 2) {
+			return true;
 		}
 	}
 
-	return 0;
-}
-
-int readAddr(FILE * file) {
-	char buf[20];
-
-	if(fgets(buf, sizeof(buf), file)) {
-		int addr;
-		int size = sscanf(buf, "%d", &addr);
-
-		if(size == 1) {
-			return addr;
-		}
-	}
-
-	return 0;
+	return false;
 }
 
 int main(int argc, char * argv[]) {	
@@ -98,10 +93,13 @@ int main(int argc, char * argv[]) {
 	bool isDragon = false, isWeather = false;
 
 	// performance statistics
+	int cycle = 0;
+	int numOfInstr = 0;
+	int numOfDataAccess = 0;
+	int numOfDataMiss = 0;
 
 	// count of CPU cycles
-	int wait = 0, cycle = 0;
-	int instrType, addr;
+	int wait = 0;
 
 	// ================ for debug purpose only ====================
 
@@ -152,11 +150,11 @@ int main(int argc, char * argv[]) {
 	// fopen, read file * #processors
 	FILE * files[8];
 	char indiFileName[20];
-	char * fileIndex = "";
+	char fileIndex[2] = "";
 
-	for(int i = 1; i <= noProcessors; i++) {
+	for(int i = 0; i < noProcessors; i++) {
 		strcpy(indiFileName, inputFile);
-		sprintf(fileIndex, "%d", i);
+		sprintf(fileIndex, "%d", i+1);
 
 		strcat(indiFileName, fileIndex);
 		strcat(indiFileName, ".prg");
@@ -171,8 +169,8 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	//cache simpleCache(cacheSize, blockSize, associativity);
-	cache simpleCache;
+	mesiCache simpleCache(cacheSize, blockSize, associativity);
+	instruction curInstr;
 
 	while(1) {
 		
@@ -186,25 +184,40 @@ int main(int argc, char * argv[]) {
 		}
 
 		// read single instruction from each processor
-		instrType = readInstrType(files[0]);
-		addr = readAddr(files[0]);
+		//instrType = readInstrType(files[0]);
+		//addr = readAddr(files[0]);
+		if(!readInstr(files[0], curInstr)) {
+			break;
+		}
+		numOfInstr += 1;
+		
+		if((numOfInstr % 100000) == 0) {
+			printf("-");
+		}
 
+		if(numOfInstr == 7451715) {
+			int test = 0;
+		}
+		
 		// if it is instruction reference 
 		// simply increment cycle counter
-		if(instrType == 0) {
+		if(curInstr.instrType == 0) {
 			continue;
 		}
+		numOfDataAccess += 1;
 
 		// if it is memory read
 		// check isCacheHit
 		// add time penalty
 		// swap in cache block
-		if(instrType == 2) {
-			if(!simpleCache.isReadHit(addr, cycle)) {
-				simpleCache.readCache(addr, cycle);
+		if(curInstr.instrType == 2) {
+			if(!simpleCache.isReadHit(curInstr.addr, cycle)) {
+				simpleCache.readCache(curInstr.addr, cycle);
 				wait = 10;
-				continue;
+				numOfDataMiss += 1;
+				//printf("Data read miss \n");
 			}
+			continue;
 		}
 
 		// if it is memory write
@@ -212,22 +225,30 @@ int main(int argc, char * argv[]) {
 		// add time penalty
 		// swap in cache block
 		// modify block status
-		if(instrType == 3) {
-			if(!simpleCache.isWriteHit(addr,cycle)) {
-				simpleCache.writeCache(addr,cycle);
+		if(curInstr.instrType == 3) {
+			if(!simpleCache.isWriteHit(curInstr.addr,cycle)) {
+				simpleCache.writeCache(curInstr.addr,cycle);
 				wait = 10;
-				continue;
+				numOfDataMiss += 1;
+				//printf("Data write miss \n");
 			}
+			continue;
 		}
 	}
 
 	// output statistics
-
+	printf("Total cycle is: %d\n", cycle);
+	printf("Total number of instructions is: %d\n", numOfInstr);
+	printf("Total number of data access is: %d\n", numOfDataAccess);
+	printf("Total number of data miss is: %d\n", numOfDataMiss);
 
 	// close files
-	for(int i=1; i<=noProcessors; i++) {
+	for(int i = 0; i < noProcessors; i++) {
 		fclose(files[i]);
 	}
+
+	// hold screen
+	while(1) {}
 
 	return 1;
 }
