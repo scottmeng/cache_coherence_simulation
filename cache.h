@@ -29,7 +29,7 @@ class cache{
 	public:
 		cache() {}
 		cache(int cacheSize, int blockSize, int associativity);
-		
+
 		bool virtual isReadHit(int addr, int cycle);
 		bool virtual isWriteHit(int addr);
 		void virtual readCache(int addr, int cycle);

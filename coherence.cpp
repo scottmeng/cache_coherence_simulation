@@ -213,8 +213,8 @@ int main(int argc, char * argv[]) {
 		// swap in cache block
 		// modify block status
 		if(instrType == 3) {
-			if(!simpleCache.isWriteHit(addr)) {
-				simpleCache.writeCache(addr);
+			if(!simpleCache.isWriteHit(addr,cycle)) {
+				simpleCache.writeCache(addr,cycle);
 				wait = 10;
 				continue;
 			}
