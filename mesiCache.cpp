@@ -162,25 +162,29 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
     
 }
 
-void mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
+int mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
 	int row = getRowNum(addr);
     int col = getColNum(addr);
     int tag = (addr / (_blockSize / 2)) / _height;
     int minLRU = cycle + 1;
     int changeBlock = -1;
+	int busRequestType = -1;
 
     // Only change state when the cache block is inside the cache
     if(col >= 0 && _cacheBlocks[row][col].blockStatus != cacheBlock::INVALID) {
         switch(transType){
         case BUS_RD:
             _cacheBlocks[row][col].blockStatus = cacheBlock::SHARED;
+			busRequestType = FLUSH;
 			break;
 		case BUS_RD_X:
+			if (_cacheBlocks[row][col].blockStatus !=cacheBlock::SHARED)
+				busRequestType = FLUSH;
 			_cacheBlocks[row][col].blockStatus = cacheBlock::INVALID;
 			break;
         }
     }
-	return;
+	return busRequestType;
 }
 
 bool mesiCache::isCacheModified(unsigned addr){
