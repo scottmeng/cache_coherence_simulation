@@ -110,3 +110,40 @@ void mesiCache::writeCache(unsigned addr, int cycle){
     }
     return;
 }
+
+void mesiCache::selfChangeState(unsigned addr, int instrType, bool isHit,int cycle){
+	mesiCache cacheBlks;
+	int row = cacheBlks.getRowNum(addr);
+	int col = cacheBlks.getColNum(addr);
+	cacheBlock cache = _cacheBlocks[row][col];
+	switch(cache.blockStatus){
+	case cacheBlock::INVALID:
+		break;
+	case cacheBlock::SHARED:
+		break;
+	case cacheBlock::MODIFIED:
+		break;
+	case cacheBlock::EXCLUSIVE:
+		break;
+	}
+	return;
+}
+
+void otherChangeStare(unsigned addr, int instrType, bool isHit,int cycle){
+
+	return;
+}
+
+bool mesiCache::isCacheModified(unsigned addr){
+	int tag = (addr / (_blockSize / 2)) / _height;
+	int index = (addr / (_blockSize / 2)) % _height; 
+	for (int i = 0; i< _width; i++){
+		if(tag == _cacheBlocks[index][i].tag&&_cacheBlocks[index][i].blockStatus == cacheBlock::MODIFIED)
+			return true;
+	}
+	return false;
+}
+
+transaction mesiCache::generateTransaction(unsigned addr, int instrType){
+
+}
