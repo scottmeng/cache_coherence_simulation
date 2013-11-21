@@ -109,11 +109,9 @@ int main(int argc, char * argv[]) {
 	bool isDragon = false, isWeather = false;
 
 	// performance statistics
+	bool completed = false;
 	int cycle = 0;
 	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses;
-
-	// count of CPU cycles
-	int wait = 0;
 
 	// data and address buses shared between memory and cache
 	queue<busRequest> inBuffer, outBuffer;
@@ -210,7 +208,7 @@ int main(int argc, char * argv[]) {
 		numOfDataMisses.push_back(0);
 	}
 
-	while(1) {
+	while(!completed) {
 		
 		// new CPU cycle
 		cycle += 1;
@@ -219,42 +217,44 @@ int main(int argc, char * argv[]) {
 		vector<busRequest> requests;
 
 		// dequeue bus transaction
-		transaction curTrans = transactions.front();
-		transactions.pop();
+		if(transactions.size() > 0) {
+			transaction curTrans = transactions.front();
+			transactions.pop();
 
-		bool isShared = false;
-		bool isModified = false;
+			bool isShared = false;
+			bool isModified = false;
 
-		// for each other processor
-		for(int i = 0; i < noProcessors; i++) {
-			if(i != curTrans.prIndex) {
+			// for each other processor
+			for(int i = 0; i < noProcessors; i++) {
+				if(i != curTrans.prIndex) {
 				
-				// check if any of the caches contain the same cache block
-				if(caches[i].isCacheHit(curTrans.addr)) {
-					isShared = true;
-				}
+					// check if any of the caches contain the same cache block
+					if(caches[i].isCacheHit(curTrans.addr)) {
+						isShared = true;
+					}
 
-				// make necessary state transition
-				// and generate data bus request type
-				int requestType = caches[i].otherChangeState(curTrans.addr, curTrans.transType, cycle);
+					// make necessary state transition
+					// and generate data bus request type
+					int requestType = caches[i].otherChangeState(curTrans.addr, curTrans.transType, cycle);
 
-				if(requestType == FLUSH) {
-					busRequest flushRequest(curTrans.prIndex, curTrans.addr, true);
-					requests.push_back(flushRequest);
+					if(requestType == FLUSH) {
+						busRequest flushRequest(curTrans.prIndex, curTrans.addr, true);
+						requests.push_back(flushRequest);
+					}
 				}
 			}
-		}
 
-		// for the origin processor
-		// if cache block exists, make state transition
-		if(caches[curTrans.prIndex].isCacheHit(curTrans.addr)) {
-			caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
-		} else {
-			// if no caches contain the copy
-			// fetch from memory
-			if(!isShared) {
-				busRequest fetchRequest(curTrans.prIndex, curTrans.addr, false);
-				requests.push_back(fetchRequest);
+			// for the origin processor
+			// if cache block exists, make state transition
+			if(caches[curTrans.prIndex].isCacheHit(curTrans.addr)) {
+				caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+			} else {
+				// if no caches contain the copy
+				// fetch from memory
+				if(!isShared) {
+					busRequest fetchRequest(curTrans.prIndex, curTrans.addr, false);
+					requests.push_back(fetchRequest);
+				}
 			}
 		}
 		
@@ -264,6 +264,15 @@ int main(int argc, char * argv[]) {
 			int index = rand()%(requests.size());
 			inBuffer.push(requests[index]);
 			requests.erase(requests.begin()+index);
+		}
+		
+		// put one bus request onto the address bus
+		if(inBuffer.size() > 0) {
+			busRequest newRequest = inBuffer.front();
+			inBuffer.pop();
+
+			// start processing a new request
+			processingRequests.push_back(newRequest);
 		}
 
 		// if any of the requests processing right now is ready
@@ -278,20 +287,15 @@ int main(int argc, char * argv[]) {
 		}
 
 		// put the request onto shared data bus
-		busRequest curRequest = outBuffer.front();
-		outBuffer.pop();
+		if(outBuffer.size() > 0) {
+			busRequest curRequest = outBuffer.front();
+			outBuffer.pop();
 
-		// load cache block in the corresponding cache
-		// and unlock the cache
-		caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, false, cycle);
-		caches[curRequest.prIndex].blocked = false;
-
-		// put one bus request onto the address bus
-		busRequest newRequest = inBuffer.front();
-		inBuffer.pop();
-
-		// start processing a new request
-		processingRequests.push_back(newRequest);
+			// load cache block in the corresponding cache
+			// and unlock the cache
+			caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, false, cycle);
+			caches[curRequest.prIndex].blocked = false;
+		}
 
 		// for every processor
 		for(int prIndex = 0; prIndex < noProcessors; prIndex ++) {
@@ -304,11 +308,22 @@ int main(int argc, char * argv[]) {
 
 			// read single instruction from each processor
 			// if there is no more instruction
-			// assign
 			if(!readInstr(files[prIndex], curInstrs[prIndex])) {
+				// if processor is not previously finished
+				// record down the total number of execution cycles
 				if(!finished[prIndex]) {
 					numOfCycles[prIndex] = cycle;
+
+					// check if all processors have completed
+					completed = true;
+
+					for(int i = 0; i < noProcessors; i++) {
+						if(!finished[i]) {
+							completed = false;
+						}
+					}
 				}
+
 				continue;
 			}
 
@@ -318,7 +333,8 @@ int main(int argc, char * argv[]) {
 				continue;
 			}
 
-
+			// the instruction is confimed to be a memory instruction
+			// and should generate a bus transaction 
 			transaction trans = caches[prIndex].generateTransaction(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, prIndex);
 
 			// if no transaction is needed
@@ -332,46 +348,10 @@ int main(int argc, char * argv[]) {
 			// block the corresponding cache
 			transactions.push(trans);
 			caches[prIndex].blocked = true;
-
-			/*
-			// if it is a memory hit
-			// perform state transition
-			// notify other processors if needed
-			// let all other processors respond
-			if(caches[prIndex].isCacheHit(curInstrs[prIndex].addr)){
-				
-				
-
-				bool isShared = false;
-
-				// check if the same cache block exists in other caches
-				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
-					if(newPrIndex != prIndex && caches[newPrIndex].isCacheHit(curInstrs[prIndex].addr)) {
-						isShared = true;
-					}
-				}
-
-				// perform state transition
-				int transType = caches[prIndex].stateTransit(curInstrs[prIndex], isShared);
-
-				// other processors respond to bus transaction
-				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
-					if(newPrIndex != prIndex) {
-						caches[newPrIndex].respondToTransaction(transType, curInstrs[prIndex]);
-					}
-				}
-			} else {
-
-				// generate bus request and block current processor
-				busRequest request(prIndex, curInstrs[prIndex].addr, 0);
-				requests.push_back(request);
-				caches[prIndex].blocked = true;
-			}*/
 		}
 	}
 
 	// output statistics
-
 	for(int i = 0; i < noProcessors; i++) {
 		printf("Statistics for processor #%d:\n", i);
 		printf("Total cycle is: %d\n", numOfCycles[i]);
