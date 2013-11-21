@@ -5,7 +5,7 @@
 
 class transaction {
 public:
-	unsigned addr;
+    unsigned addr;
     int transType;
     int prIndex;
 };

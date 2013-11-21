@@ -25,6 +25,8 @@ class cache{
         vector<vector <cacheBlock> > _cacheBlocks;
 
         int getRowIndex(unsigned addr);
+        int getColNum(unsigned addr);
+        int getRowNum(unsigned addr);
 
     public:
         cache() {}
@@ -32,10 +34,10 @@ class cache{
 
         bool isCacheHit(unsigned addr);
 		
-
     protected:
         int getColNum(unsigned addr);
         int getRowNum(unsigned addr);
+
 
 };
 
