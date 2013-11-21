@@ -126,7 +126,7 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
                 changeBlock = i;
             }
         }
-        if(changeBlock > 0) {
+        if(changeBlock > -1) {
             // Update the LRU
             _cacheBlocks[row][changeBlock].lru = cycle;
             //If it a read type
@@ -150,12 +150,12 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
             
-            if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
-                _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHARED) 
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
+                _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHARED) 
+                    _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED)
+                    _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
             }
     }
     

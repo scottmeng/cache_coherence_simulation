@@ -38,7 +38,7 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
                 changeBlock = i;
             }
         }
-        if(changeBlock > 0) {
+        if(changeBlock > -1) {
             // Update the LRU
             _cacheBlocks[row][changeBlock].lru = cycle;
             //If it a read type
@@ -62,16 +62,16 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
             
-            if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
-                _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDCLEAN) {
+            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
+                _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN) {
                 if(isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDMODIFIED;
+                    _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
                 else
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            } else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDMODIFIED) {
+                    _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+            } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
                 if(!isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+                    _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
             }
         }
     }
