@@ -21,7 +21,7 @@ class cache{
         int _height;
         int _width;
         int _numOfBlocks;		
-
+		bool blocked;
         vector<vector <cacheBlock> > _cacheBlocks;
 
         int getRowIndex(unsigned addr);
@@ -33,8 +33,11 @@ class cache{
         cache(int cacheSize, int blockSize, int associativity);
 
         bool isCacheHit(unsigned addr);
+		
+    protected:
+        int getColNum(unsigned addr);
+        int getRowNum(unsigned addr);
 
-        
 
 };
 
