@@ -91,7 +91,7 @@ int dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {
         case BUS_RD:
             if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
-                busRequestType = UPDATE;
+                //busRequestType = UPDATE; different
             } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
                 busRequestType = FLUSH;
