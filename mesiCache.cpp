@@ -150,7 +150,7 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
             if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::INVALID)
-				_cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHARED;
+				_cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
 			else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
                 _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHARED) 
