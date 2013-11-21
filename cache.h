@@ -14,9 +14,9 @@ using namespace std;
 
 class cache{
     protected:
-       	int _cacheSize;
-       	int _blockSize;
-       	int _associativity;
+        int _cacheSize;
+        int _blockSize;
+        int _associativity;
 
         int _height;
         int _width;
@@ -30,17 +30,11 @@ class cache{
         cache() {}
         cache(int cacheSize, int blockSize, int associativity);
 
-	bool uniIsReadHit(unsigned addr, int cycle);
-	bool uniIsWriteHit(unsigned addr, int cycle);
-	void uniReadCache(unsigned addr, int cycle);
-	void uniWriteCache(unsigned addr, int cycle);
+        bool isCacheHit(unsigned addr);
 
-        bool virtual isReadHit(unsigned addr, int cycle);
-        bool virtual isWriteHit(unsigned addr, int cycle);
-        void virtual readCache(unsigned addr, int cycle);
-        void virtual writeCache(unsigned addr, int cycle);
-
-        int isCacheHit(unsigned addr);
+    private:
+        int getColNum(unsigned addr);
+        int getRowNum(unsigned addr);
 
 };
 
