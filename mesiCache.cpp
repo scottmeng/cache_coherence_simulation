@@ -172,22 +172,11 @@ void mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
     if(col >= 0) {
         switch(transType){
         case BUS_RD:
-            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
-                _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
-            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED)
-                _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
+            _cacheBlocks[row][col].blockStatus = cacheBlock::SHARED;
             break;
 		case BUS_RD_X:
 			_cacheBlocks[row][col].blockStatus = cacheBlock::INVALID;
 			break;
-		case FLUSH:
-
-			break;
-        case UPDATE:
-            if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
-                _cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN;
-            }
-            break;
         }
     }
 	return;
@@ -203,6 +192,32 @@ bool mesiCache::isCacheModified(unsigned addr){
 	return false;
 }
 
-transaction mesiCache::generateTransaction(unsigned addr, int instrType){
-
+transaction mesiCache::generateTransaction(unsigned addr, int instrType, int prIndex){
+	int row = getRowNum(addr);
+    int col = getColNum(addr);
+    transaction curXact;
+    curXact.addr = addr;
+    curXact.prIndex = prIndex;
+    curXact.transType = -1;
+    
+    if(col < 0) {
+        curXact.transType = BUS_RD;
+    }
+    else {
+        switch(_cacheBlocks[row][col].blockStatus) {
+		case cacheBlock::INVALID:
+			
+			break;
+        case cacheBlock::SHARED:
+			break;
+        case cacheBlock::MODIFIED:
+            if(instrType == WRITE)
+                curXact.transType = BUS_UPDATE;
+            break;
+		case cacheBlock::EXCLUSIVE:
+			break;
+        }
+    }
+    
+    return curXact;
 }
