@@ -294,7 +294,7 @@ int main(int argc, char * argv[]) {
 				continue;
 			}
 
-			// the instruction is confimed to be a memory instruction
+			// the instruction is confirmed to be a memory instruction
 			// and should generate a bus transaction 
 			transaction trans = caches[prIndex].generateTransaction(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, prIndex);
 
@@ -345,9 +345,19 @@ int main(int argc, char * argv[]) {
 			busRequest curRequest = outBuffer.front();
 			outBuffer.pop();
 
+			bool isShared = false;
+
+			for(int i = 0; i < noProcessors; i++) {
+				if(i != curRequest.prIndex) {
+					if(caches[i].isCacheHit(curRequest.addr)) {
+						isShared = true;
+					}
+				}
+			}
+
 			// load cache block in the corresponding cache
 			// and unlock the cache
-			caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, false, cycle);
+			caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, isShared, cycle);
 			caches[curRequest.prIndex].blocked = false;
 		}
 	}
