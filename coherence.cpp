@@ -1,7 +1,7 @@
 // coherence.cpp
 // Created by: Long Jinghan, Meng Kaizhi, Zhou Ruofan (National University of Singapore)
 // Created on: 7 Nov 2013
-// Last edited on: 7 Nov 2013
+// Last edited on: 21 Nov 2013
 // All rights reserved
 
 #include <stdio.h>
@@ -18,13 +18,6 @@
 #include "constants.h"
 
 using namespace std;
-
-#define DRAGON_PROTOCOL "DRAGON"
-#define MESI_PROTOCOL "MESI"
-
-#define FTT_FILE "FTT"
-#define WEATHER_FILE "WEATHER"
-
 
 struct instruction {
 	int instrType;
@@ -221,6 +214,8 @@ int main(int argc, char * argv[]) {
 		
 		// new CPU cycle
 		cycle += 1;
+
+		// temperary storage for bus requests (for randomnization)
 		vector<busRequest> requests;
 
 		// dequeue bus transaction
