@@ -1,6 +1,9 @@
 #ifndef MESICACHE_H
 #define MESICACHE_H
 
+#define READ 2
+#define WRITE 3
+
 #include "cache.h"
 #include "transaction.h"
 using namespace std;
