@@ -185,7 +185,7 @@ void mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
 			break;
         case UPDATE:
             if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
-                _cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN;
+                _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
             }
             break;
         }

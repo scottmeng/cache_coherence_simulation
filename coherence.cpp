@@ -40,13 +40,18 @@ struct busRequest{
 	int prIndex;
 	unsigned addr;
 	int countDown;
-	int requestType;		// 0 for mem to cache, 1 for cache to cache
+	bool fromCache;
 
-	busRequest(int inPrIndex, unsigned inAddr, int inRequestType) {
+	busRequest(int inPrIndex, unsigned inAddr, bool inFromCache) {
 		prIndex = inPrIndex;
 		addr = inAddr;
-		countDown = -1;
-		requestType = inRequestType;
+		fromCache = inFromCache;
+
+		if(fromCache) {
+			countDown = 1;
+		} else {
+			countDown = 10;
+		}
 	}
 };
 
@@ -200,7 +205,7 @@ int main(int argc, char * argv[]) {
 
 	// initialize caches, instructions and performance statistics
 	for(int i = 0; i < noProcessors; i++) {
-		mesiCache simpleCache(cacheSize, blockSize, associativity);
+		dragonCache simpleCache(cacheSize, blockSize, associativity);
 		caches.push_back(simpleCache);
 
 		instruction curInstr;
@@ -238,17 +243,25 @@ int main(int argc, char * argv[]) {
 				// and generate data bus request type
 				int requestType = caches[i].otherChangeState(curTrans.addr, curTrans.transType, cycle);
 
-				if(requestType != -1) {
-					busRequest newRequest(curTrans.prIndex, curTrans.addr, requestType);
-					requests.push_back(newRequest);
+				if(requestType == FLUSH) {
+					busRequest flushRequest(curTrans.prIndex, curTrans.addr, true);
+					requests.push_back(flushRequest);
 				}
 			}
 		}
 
 		// for the origin processor
-		// make state transition
-		caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
-
+		// if cache block exists, make state transition
+		if(caches[curTrans.prIndex].isCacheHit(curTrans.addr)) {
+			caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+		} else {
+			// if no caches contain the copy
+			// fetch from memory
+			if(!isShared) {
+				busRequest fetchRequest(curTrans.prIndex, curTrans.addr, false);
+				requests.push_back(fetchRequest);
+			}
+		}
 		
 		// randomize the sequence of bus requests
 		// and push them into the queue
@@ -275,18 +288,12 @@ int main(int argc, char * argv[]) {
 
 		// load cache block in the corresponding cache
 		// and unlock the cache
-		caches[curRequest.prIndex].loadCache(curRequest.addr);
+		caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, false, cycle);
 		caches[curRequest.prIndex].blocked = false;
 
+		// put one bus request onto the address bus
 		busRequest newRequest = inBuffer.front();
 		inBuffer.pop();
-
-		// set request latency based on request type
-		if(newRequest.requestType == 0) {
-			newRequest.countDown = 10;
-		} else {
-			newRequest.countDown = 1;
-		}
 
 		// start processing a new request
 		processingRequests.push_back(newRequest);
