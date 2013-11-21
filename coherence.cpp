@@ -239,13 +239,13 @@ int main(int argc, char * argv[]) {
 			// perform state transition
 			// notify other processors if needed
 			// let all other processors respond
-			if(caches[prIndex].isCacheHit(curInstrs[prIndex])){
+			if(caches[prIndex].isCacheHit(curInstrs[prIndex].addr)){
 				
 				bool isShared = false;
 
 				// check if the same cache block exists in other caches
 				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
-					if(newPrIndex != prIndex && caches[newPrIndex].isCacheHit(curInstrs[prIndex])) {
+					if(newPrIndex != prIndex && caches[newPrIndex].isCacheHit(curInstrs[prIndex].addr)) {
 						isShared = true;
 					}
 				}
@@ -311,10 +311,13 @@ int main(int argc, char * argv[]) {
 	}
 
 	// output statistics
-	printf("Total cycle is: %d\n", cycle);
-	printf("Total number of instructions is: %d\n", numOfInstr);
-	printf("Total number of data access is: %d\n", numOfDataAccess);
-	printf("Total number of data miss is: %d\n", numOfDataMiss);
+
+	for(int i = 0; i < noProcessors; i++) {
+		printf("Statistics for processor #%d:\n", i);
+		printf("Total cycle is: %d\n", numOfCycles[i]);
+		printf("Total number of data access is: %d\n", numOfDataAccesses[i]);
+		printf("Total number of data miss is: %d\n", numOfDataMisses[i]);
+	}
 
 	// close files
 	for(int i = 0; i < noProcessors; i++) {
