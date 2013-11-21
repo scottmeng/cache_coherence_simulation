@@ -45,7 +45,7 @@ struct busRequest{
 		countDown = -1;
 		requestType = inRequestType;
 	}
-}
+};
 
 /*
  * check if user inputs are still valid
@@ -114,9 +114,11 @@ int main(int argc, char * argv[]) {
 	// count of CPU cycles
 	int wait = 0;
 
-	// bus
+	// data and address buses shared between memory and cache
 	queue<busRequest> inBuffer, outBuffer;
 	vector<busRequest> processingRequests;
+
+	// bus transaction request
 
 	// ================ for debug purpose only ====================
 
