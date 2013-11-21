@@ -5,7 +5,7 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
     int col = getColNum(addr);
     int tag = (addr / (_blockSize / 2)) / _height;
     int minLRU = cycle + 1;
-    int changeBlock = -1;
+    int changeBlock = -1;		
 
     // If the copy is not in the cache
     if(col < 0) {

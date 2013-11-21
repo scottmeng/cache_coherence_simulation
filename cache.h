@@ -9,6 +9,7 @@
 
 #include <vector>
 #include "cacheBlock.h"
+#include "constants.h"
 
 using namespace std;
 

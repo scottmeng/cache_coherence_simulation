@@ -20,7 +20,7 @@ public:
 	void writeCache(unsigned addr, int cycle);
 
 	void selfChangeState(unsigned addr, int instrType, bool isHit,int cycle);
-	void otherChangeState(unsigned addr, int instrType, bool isHit, int cycle);
+	void otherChangeState(unsigned addr, int transType, int cycle);
 
 	bool isCacheModified(unsigned addr);
 	transaction generateTransaction(unsigned addr, int instrType);

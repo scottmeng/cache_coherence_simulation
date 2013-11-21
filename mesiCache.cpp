@@ -111,7 +111,7 @@ void mesiCache::writeCache(unsigned addr, int cycle){
     return;
 }
 
-void mesiCache::selfChangeState(unsigned addr, int instrType, bool isHit,int cycle){
+void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int cycle){
 	int row = getRowNum(addr);
     int col = getColNum(addr);
     int tag = (addr / (_blockSize / 2)) / _height;
@@ -132,13 +132,13 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isHit,int cyc
             //If it a read type
             if(instrType == READ) {
                 if(isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDCLEAN;
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHARED;
                 else
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
             } else {
                 _cacheBlocks[row][changeBlock].tag = tag;
                 if(isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDMODIFIED;
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
                 else
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             }
@@ -152,22 +152,44 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isHit,int cyc
             
             if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
                 _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDCLEAN) {
-                if(isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDMODIFIED;
-                else
+            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHARED) 
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            } else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDMODIFIED) {
-                if(!isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED)
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             }
-        }
     }
-	return;
+    
 }
 
-void otherChangeStare(unsigned addr, int instrType, bool isHit,int cycle){
+void mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
+	int row = getRowNum(addr);
+    int col = getColNum(addr);
+    int tag = (addr / (_blockSize / 2)) / _height;
+    int minLRU = cycle + 1;
+    int changeBlock = -1;
 
+    // Only change state when the cache block is inside the cache
+    if(col >= 0) {
+        switch(transType){
+        case BUS_RD:
+            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
+                _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
+            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED)
+                _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
+            break;
+		case BUS_RD_X:
+			_cacheBlocks[row][col].blockStatus = cacheBlock::INVALID;
+			break;
+		case FLUSH:
+
+			break;
+        case UPDATE:
+            if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
+                _cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN;
+            }
+            break;
+        }
+    }
 	return;
 }
 
