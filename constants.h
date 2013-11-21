@@ -4,4 +4,10 @@
 #define UPDATE		4
 #define BUS_UPDATE  5
 
+#define DRAGON_PROTOCOL "DRAGON"
+#define MESI_PROTOCOL "MESI"
+
+#define FTT_FILE "FTT"
+#define WEATHER_FILE "WEATHER"
+
 

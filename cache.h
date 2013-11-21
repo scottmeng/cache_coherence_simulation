@@ -34,12 +34,6 @@ class cache{
 
         bool isCacheHit(unsigned addr);
 		bool blocked;
-		
-    protected:
-        int getColNum(unsigned addr);
-        int getRowNum(unsigned addr);
-
-
 };
 
 #endif

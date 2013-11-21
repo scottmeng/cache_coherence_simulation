@@ -48,7 +48,7 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             } else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDMODIFIED) {
                 if(!isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED;
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             }
         }
     }
@@ -60,7 +60,7 @@ int dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {
     int tag = (addr / (_blockSize / 2)) / _height;
     int minLRU = cycle + 1;
     int changeBlock = -1;
-    int transType = -1;
+    int busRequestType = -1;
 
     // Only change state when the cache block is inside the cache
     if(col >= 0) {
@@ -68,12 +68,12 @@ int dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {
         case BUS_RD:
             if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
-                transType = UPDATE;
+                busRequestType = UPDATE;
             } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
-                transType = FLUSH;
+                busRequestType = FLUSH;
             } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
-                transType = FLUSH;
+                busRequestType = FLUSH;
             }
             break;
 
@@ -81,12 +81,12 @@ int dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {
             if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
             } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN) {
-                transType = UPDATE;
+                busRequestType = UPDATE;
             }
             break;
         }
     }
-    return transType;
+    return busRequestType;
 }
 
 //bool isCacheModified(unsigned addr);
