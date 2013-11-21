@@ -111,7 +111,7 @@ int main(int argc, char * argv[]) {
 	// performance statistics
 	bool completed = false;
 	int cycle = 0;
-	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses;
+	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses, numOfInstructions;
 
 	// data and address buses shared between memory and cache
 	queue<busRequest> inBuffer, outBuffer;
@@ -206,6 +206,7 @@ int main(int argc, char * argv[]) {
 		numOfCycles.push_back(0);
 		numOfDataAccesses.push_back(0);
 		numOfDataMisses.push_back(0);
+		numOfInstructions.push_back(0);
 	}
 
 	while(!completed) {
@@ -287,6 +288,14 @@ int main(int argc, char * argv[]) {
 
 				continue;
 			}
+
+			numOfInstructions[prIndex]++;
+
+			// displaying progress bar
+			if((numOfInstructions[prIndex] % 100000) == 0) {
+				printf("-");
+			}
+
 
 			// if it is instruction reference 
 			// simply increment cycle counter
