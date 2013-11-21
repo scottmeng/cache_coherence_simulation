@@ -27,22 +27,7 @@ mesiCache::mesiCache(int cacheSize, int blockSize, int associativity) {
 }
 
 bool mesiCache::isReadHit(unsigned addr, int cycle){
-	int index;
-	int tag;
-	index = (addr / (_blockSize / 2)) % _height;
-	tag = (addr / (_blockSize / 2)) / _height;
-
-	for(int i = 0; i < _width; i++) {
-		if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
-			_cacheBlocks[index][i].lru = cycle;
-			return true;
-		}
-	}
-	return false;
-}
-
-bool mesiCache::isWriteHit(unsigned addr, int cycle){
-	int index;
+    int index;
     int tag;
     index = (addr / (_blockSize / 2)) % _height;
     tag = (addr / (_blockSize / 2)) / _height;
@@ -50,7 +35,22 @@ bool mesiCache::isWriteHit(unsigned addr, int cycle){
     for(int i = 0; i < _width; i++) {
         if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
             _cacheBlocks[index][i].lru = cycle;
-			_cacheBlocks[index][i].blockStatus = cacheBlock::MODIFIED;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mesiCache::isWriteHit(unsigned addr, int cycle){
+    int index;
+    int tag;
+    index = (addr / (_blockSize / 2)) % _height;
+    tag = (addr / (_blockSize / 2)) / _height;
+
+    for(int i = 0; i < _width; i++) {
+        if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
+            _cacheBlocks[index][i].lru = cycle;
+            _cacheBlocks[index][i].blockStatus = cacheBlock::MODIFIED;
             return true;
         }
     }
@@ -58,7 +58,7 @@ bool mesiCache::isWriteHit(unsigned addr, int cycle){
 }
 
 void mesiCache::readCache(unsigned addr, int cycle){
-	int index;
+    int index;
     int tag;
     int minLRU = cycle + 1;
     int changeBlock = -1;
@@ -68,13 +68,13 @@ void mesiCache::readCache(unsigned addr, int cycle){
     for(int i = 0; i < _width; i++) {
         if(_cacheBlocks[index][i].blockStatus == cacheBlock::INVALID) {
             changeBlock = i;
-			break;
+            break;
         } else {
-			if(minLRU > _cacheBlocks[index][i].lru) {
-				minLRU = _cacheBlocks[index][i].lru;
-				changeBlock = i;
-			} 
-		}
+            if(minLRU > _cacheBlocks[index][i].lru) {
+                minLRU = _cacheBlocks[index][i].lru;
+                changeBlock = i;
+            } 
+        }
     }
     if(changeBlock > -1){
         _cacheBlocks[index][changeBlock].tag = tag;
@@ -85,7 +85,7 @@ void mesiCache::readCache(unsigned addr, int cycle){
 }
 
 void mesiCache::writeCache(unsigned addr, int cycle){
-	int index;
+    int index;
     int tag;
     int minLRU = cycle + 1;
     int changeBlock = -1;
@@ -95,12 +95,12 @@ void mesiCache::writeCache(unsigned addr, int cycle){
     for(int i = 0; i < _width; i++) {
         if(_cacheBlocks[index][i].blockStatus == cacheBlock::INVALID) {
             changeBlock = i;
-			break;
+            break;
         } else {
-			if(minLRU > _cacheBlocks[index][i].lru) {
-				minLRU = _cacheBlocks[index][i].lru;
-				changeBlock = i;
-			}   
+            if(minLRU > _cacheBlocks[index][i].lru) {
+                minLRU = _cacheBlocks[index][i].lru;
+                changeBlock = i;
+            }   
         }
     }
     if(changeBlock > -1){
@@ -108,5 +108,5 @@ void mesiCache::writeCache(unsigned addr, int cycle){
         _cacheBlocks[index][changeBlock].lru = cycle;
         _cacheBlocks[index][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
     }
-	return;
+    return;
 }

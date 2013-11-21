@@ -115,15 +115,29 @@ void cache::uniWriteCache(unsigned addr, int cycle){
 }
 
 bool cache::isReadHit(unsigned addr, int cycle) {
-	return false;
+    return false;
 }
 bool cache::isWriteHit(unsigned addr, int cycle) {
-	return false;
+    return false;
 }
 // Assume read miss, put the addr into the cache
 void cache::readCache(unsigned addr, int cycle) {
-	return ;
+    return ;
 }
 void cache::writeCache(unsigned addr, int cycle) {
-	return;
+    return;
+}
+
+int cache::isCacheHit(unsigned addr) {
+    int index;
+    int tag;
+    index = (addr / (_blockSize / 2)) % _height;
+    tag = (addr / (_blockSize / 2)) / _height;
+
+    for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
+        if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
+            return i;
+        }
+    }
+    return -1;
 }

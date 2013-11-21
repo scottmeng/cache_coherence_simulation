@@ -45,7 +45,7 @@ struct busRequest{
 		countDown = -1;
 		requestType = inRequestType;
 	}
-}
+};
 
 /*
  * check if user inputs are still valid
@@ -114,9 +114,11 @@ int main(int argc, char * argv[]) {
 	// count of CPU cycles
 	int wait = 0;
 
-	// bus
+	// data and address buses shared between memory and cache
 	queue<busRequest> inBuffer, outBuffer;
 	vector<busRequest> processingRequests;
+
+	// bus transaction request
 
 	// ================ for debug purpose only ====================
 
@@ -239,19 +241,19 @@ int main(int argc, char * argv[]) {
 			// perform state transition
 			// notify other processors if needed
 			// let all other processors respond
-			if(caches[prIndex].isCacheHit(curInstrs[prIndex])){
+			if(caches[prIndex].isCacheHit(curInstrs[prIndex].addr)){
 				
 				bool isShared = false;
 
 				// check if the same cache block exists in other caches
 				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
-					if(newPrIndex != prIndex && caches[newPrIndex].isCacheHit(curInstrs[prIndex])) {
+					if(newPrIndex != prIndex && caches[newPrIndex].isCacheHit(curInstrs[prIndex].addr)) {
 						isShared = true;
 					}
 				}
 
 				// perform state transition
-				transactionType transType = caches[prIndex].stateTransit(curInstrs[prIndex], isShared);
+				int transType = caches[prIndex].stateTransit(curInstrs[prIndex], isShared);
 
 				// other processors respond to bus transaction
 				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
@@ -311,10 +313,13 @@ int main(int argc, char * argv[]) {
 	}
 
 	// output statistics
-	printf("Total cycle is: %d\n", cycle);
-	printf("Total number of instructions is: %d\n", numOfInstr);
-	printf("Total number of data access is: %d\n", numOfDataAccess);
-	printf("Total number of data miss is: %d\n", numOfDataMiss);
+
+	for(int i = 0; i < noProcessors; i++) {
+		printf("Statistics for processor #%d:\n", i);
+		printf("Total cycle is: %d\n", numOfCycles[i]);
+		printf("Total number of data access is: %d\n", numOfDataAccesses[i]);
+		printf("Total number of data miss is: %d\n", numOfDataMisses[i]);
+	}
 
 	// close files
 	for(int i = 0; i < noProcessors; i++) {
