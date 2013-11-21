@@ -126,7 +126,7 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
                 changeBlock = i;
             }
         }
-        if(changeBlock > 0) {
+        if(changeBlock > -1) {
             // Update the LRU
             _cacheBlocks[row][changeBlock].lru = cycle;
             //If it a read type

@@ -257,45 +257,6 @@ int main(int argc, char * argv[]) {
 				}
 			}
 		}
-		
-		// randomize the sequence of bus requests
-		// and push them into the queue
-		while(requests.size() > 0){
-			int index = rand()%(requests.size());
-			inBuffer.push(requests[index]);
-			requests.erase(requests.begin()+index);
-		}
-		
-		// put one bus request onto the address bus
-		if(inBuffer.size() > 0) {
-			busRequest newRequest = inBuffer.front();
-			inBuffer.pop();
-
-			// start processing a new request
-			processingRequests.push_back(newRequest);
-		}
-
-		// if any of the requests processing right now is ready
-		// push them into the out buffer
-		// and remove from processing request list
-		for(int i = 0; i < processingRequests.size(); i++) {
-			processingRequests[i].countDown -= 1;
-			if(processingRequests[i].countDown == 0) {
-				outBuffer.push(processingRequests[i]);
-				processingRequests.erase(processingRequests.begin() + i);
-			}
-		}
-
-		// put the request onto shared data bus
-		if(outBuffer.size() > 0) {
-			busRequest curRequest = outBuffer.front();
-			outBuffer.pop();
-
-			// load cache block in the corresponding cache
-			// and unlock the cache
-			caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, false, cycle);
-			caches[curRequest.prIndex].blocked = false;
-		}
 
 		// for every processor
 		for(int prIndex = 0; prIndex < noProcessors; prIndex ++) {
@@ -348,6 +309,46 @@ int main(int argc, char * argv[]) {
 			// block the corresponding cache
 			transactions.push(trans);
 			caches[prIndex].blocked = true;
+		}
+
+		
+		// randomize the sequence of bus requests
+		// and push them into the queue
+		while(requests.size() > 0){
+			int index = rand()%(requests.size());
+			inBuffer.push(requests[index]);
+			requests.erase(requests.begin()+index);
+		}
+		
+		// put one bus request onto the address bus
+		if(inBuffer.size() > 0) {
+			busRequest newRequest = inBuffer.front();
+			inBuffer.pop();
+
+			// start processing a new request
+			processingRequests.push_back(newRequest);
+		}
+
+		// if any of the requests processing right now is ready
+		// push them into the out buffer
+		// and remove from processing request list
+		for(int i = 0; i < processingRequests.size(); i++) {
+			processingRequests[i].countDown -= 1;
+			if(processingRequests[i].countDown == 0) {
+				outBuffer.push(processingRequests[i]);
+				processingRequests.erase(processingRequests.begin() + i);
+			}
+		}
+
+		// put the request onto shared data bus
+		if(outBuffer.size() > 0) {
+			busRequest curRequest = outBuffer.front();
+			outBuffer.pop();
+
+			// load cache block in the corresponding cache
+			// and unlock the cache
+			caches[curRequest.prIndex].selfChangeState(curRequest.addr, curInstrs[curRequest.prIndex].instrType, false, cycle);
+			caches[curRequest.prIndex].blocked = false;
 		}
 	}
 
