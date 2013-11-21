@@ -251,7 +251,7 @@ int main(int argc, char * argv[]) {
 				}
 
 				// perform state transition
-				transactionType transType = caches[prIndex].stateTransit(curInstrs[prIndex], isShared);
+				int transType = caches[prIndex].stateTransit(curInstrs[prIndex], isShared);
 
 				// other processors respond to bus transaction
 				for(int newPrIndex = 0; newPrIndex < noProcessors; newPrIndex++) {
