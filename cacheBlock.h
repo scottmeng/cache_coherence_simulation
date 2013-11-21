@@ -16,7 +16,7 @@ class cacheBlock {
 	public:
 		// define enum for cache_unit status
 		enum status {
-			INVALID, MODIFIED, SHARED, EXCLUSIVE
+			INVALID, MODIFIED, SHARED, EXCLUSIVE, SHAREDCLEAN, SHAREDMODIFIED
 		};
 
 		int tag;
