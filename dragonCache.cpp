@@ -1,5 +1,28 @@
 #include "dragonCache.h"
 
+dragonCache::dragonCache(int cacheSize, int blockSize, int associativity) {
+    _cacheSize = cacheSize;
+    _blockSize = blockSize;
+    _associativity = associativity;
+
+    // compute width and height
+    _numOfBlocks = _cacheSize / _blockSize;
+    _width = _associativity;
+    _height = _numOfBlocks / _associativity;
+
+    // initialize all cache blocks using dirty data
+    for(int i = 0; i < _height ; i++) {
+        vector<cacheBlock> row;
+        for(int j = 0; j <_width; j++) {
+            cacheBlock dirtyBlock = cacheBlock(_blockSize);
+            row.push_back(dirtyBlock);
+        }
+        _cacheBlocks.push_back(row);
+    }
+
+	blocked = false;
+}
+
 void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, int cycle) {
     int row = getRowNum(addr);
     int col = getColNum(addr);
