@@ -110,3 +110,77 @@ void mesiCache::writeCache(unsigned addr, int cycle){
     }
     return;
 }
+
+void mesiCache::selfChangeState(unsigned addr, int instrType, bool isHit,int cycle){
+	int row = getRowNum(addr);
+    int col = getColNum(addr);
+    int tag = (addr / (_blockSize / 2)) / _height;
+    int minLRU = cycle + 1;
+    int changeBlock = -1;
+
+	// If the copy is not in the cache
+    if(col < 0) {
+        for(int i = 0; i < _width; i++) {
+            if(minLRU > _cacheBlocks[row][i].lru) {
+                minLRU = _cacheBlocks[row][i].lru;
+                changeBlock = i;
+            }
+        }
+        if(changeBlock > 0) {
+            // Update the LRU
+            _cacheBlocks[row][changeBlock].lru = cycle;
+            //If it a read type
+            if(instrType == READ) {
+                if(isShared)
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDCLEAN;
+                else
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
+            } else {
+                _cacheBlocks[row][changeBlock].tag = tag;
+                if(isShared)
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDMODIFIED;
+                else
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            }
+        }  
+    // Else the copy is in the cache
+    } else {
+        _cacheBlocks[row][col].lru = cycle;
+        // Only consider the write instruction, as read won't change the state in its own blocks
+        if(instrType == WRITE) {
+            _cacheBlocks[row][col].tag = tag;
+            
+            if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
+                _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDCLEAN) {
+                if(isShared)
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDMODIFIED;
+                else
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            } else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHAREDMODIFIED) {
+                if(!isShared)
+                    _cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED;
+            }
+        }
+    }
+	return;
+}
+
+void otherChangeStare(unsigned addr, int instrType, bool isHit,int cycle){
+
+	return;
+}
+
+bool mesiCache::isCacheModified(unsigned addr){
+	int tag = (addr / (_blockSize / 2)) / _height;
+	int index = (addr / (_blockSize / 2)) % _height; 
+	for (int i = 0; i< _width; i++){
+		if(tag == _cacheBlocks[index][i].tag&&_cacheBlocks[index][i].blockStatus == cacheBlock::MODIFIED)
+			return true;
+	}
+	return false;
+}
+
+transaction mesiCache::generateTransaction(unsigned addr, int instrType){
+
+}
