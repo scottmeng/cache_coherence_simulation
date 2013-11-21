@@ -30,6 +30,19 @@ cache::cache(int cacheSize, int blockSize, int associativity) {
     }
 }
 
+int cache::getColNum(unsigned addr){
+	int tag = (addr / (_blockSize / 2)) / _height;
+	int index = (addr / (_blockSize / 2)) % _height; 
+	for (int i = 0; i< _width; i++){
+		if (tag == _cacheBlocks[index][i].tag )
+			return i;
+	}
+	return -1;
+}
+
+int cache::getRowNum(unsigned addr){
+	return (addr / (_blockSize / 2)) % _height;
+}
 
 
 bool cache::isCacheHit(unsigned addr) {
