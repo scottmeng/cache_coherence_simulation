@@ -54,30 +54,39 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
     }
 }
 
-void dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {
+int dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {
     int row = getRowNum(addr);
     int col = getColNum(addr);
     int tag = (addr / (_blockSize / 2)) / _height;
     int minLRU = cycle + 1;
     int changeBlock = -1;
+    int transType = -1;
 
     // Only change state when the cache block is inside the cache
     if(col >= 0) {
         switch(transType){
         case BUS_RD:
-            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
+            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
-            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED)
+                transType = UPDATE;
+            } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED) {
                 _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
+                transType = FLUSH;
+            } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
+                transType = FLUSH;
+            }
             break;
 
-        case UPDATE:
+        case BUS_UPDATE:
             if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
-                _cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN;
+                _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDCLEAN;
+            } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN) {
+                transType = UPDATE;
             }
             break;
         }
     }
+    return transType;
 }
 
 //bool isCacheModified(unsigned addr);
@@ -97,7 +106,7 @@ transaction dragonCache::generateTransaction(unsigned addr, int instrType, int p
         case cacheBlock::SHAREDCLEAN:
         case cacheBlock::SHAREDMODIFIED:
             if(instrType == WRITE)
-                curXact.transType = UPDATE;
+                curXact.transType = BUS_UPDATE;
             break;
         }
     }
