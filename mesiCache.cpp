@@ -200,19 +200,20 @@ transaction mesiCache::generateTransaction(unsigned addr, int instrType, int prI
     curXact.prIndex = prIndex;
     curXact.transType = -1;
     
+	//INVALID if col = -1,cache miss
     if(col < 0) {
-        curXact.transType = BUS_RD;
-    }
+		if(instrType == READ)
+			curXact.transType = BUS_RD;
+		else if(instrType == WRITE)
+			curXact.transType = BUS_RD_X;
+	}
     else {
         switch(_cacheBlocks[row][col].blockStatus) {
-		case cacheBlock::INVALID:
-			
-			break;
         case cacheBlock::SHARED:
+			if(instrType == WRITE)
+                curXact.transType = BUS_RD_X;
 			break;
         case cacheBlock::MODIFIED:
-            if(instrType == WRITE)
-                curXact.transType = BUS_UPDATE;
             break;
 		case cacheBlock::EXCLUSIVE:
 			break;
