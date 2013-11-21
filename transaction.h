@@ -4,7 +4,8 @@
 #include "constants.h"
 
 class transaction {
-    unsigned addr;
+public:
+	unsigned addr;
     int transType;
     int prIndex;
 };
