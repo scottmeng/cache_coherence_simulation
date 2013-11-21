@@ -13,6 +13,9 @@
 
 #include "cache.h"
 #include "mesiCache.h"
+#include "transaction.h"
+#include "dragonCache.h"
+#include "constants.h"
 
 using namespace std;
 
@@ -188,7 +191,7 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	vector<mesiCache> caches;
+	vector<dragonCache> caches;
 	vector<instruction> curInstrs;
 	vector<bool> finished;
 
@@ -237,12 +240,22 @@ int main(int argc, char * argv[]) {
 				continue;
 			}
 
+
+			transaction trans = caches[prIndex].generateTransaction(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, prIndex);
+
+			// no transaction is needed
+			if(trans.transType == -1) {
+				
+			}
+
 			// if it is a memory hit
 			// perform state transition
 			// notify other processors if needed
 			// let all other processors respond
 			if(caches[prIndex].isCacheHit(curInstrs[prIndex].addr)){
 				
+				
+
 				bool isShared = false;
 
 				// check if the same cache block exists in other caches
