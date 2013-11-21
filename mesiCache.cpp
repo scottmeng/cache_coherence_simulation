@@ -149,13 +149,14 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
         // Only consider the write instruction, as read won't change the state in its own blocks
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
-            
-            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
-                _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHARED) 
-                    _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED)
-                    _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+            if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::INVALID)
+				_cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHARED;
+			else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
+                _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHARED) 
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED)
+                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             }
     }
     
@@ -169,11 +170,11 @@ void mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
     int changeBlock = -1;
 
     // Only change state when the cache block is inside the cache
-    if(col >= 0) {
+    if(col >= 0 && _cacheBlocks[row][col].blockStatus != cacheBlock::INVALID) {
         switch(transType){
         case BUS_RD:
             _cacheBlocks[row][col].blockStatus = cacheBlock::SHARED;
-            break;
+			break;
 		case BUS_RD_X:
 			_cacheBlocks[row][col].blockStatus = cacheBlock::INVALID;
 			break;
@@ -200,7 +201,7 @@ transaction mesiCache::generateTransaction(unsigned addr, int instrType, int prI
     curXact.prIndex = prIndex;
     curXact.transType = -1;
     
-	//INVALID if col = -1,cache miss
+	//col = -1,cache miss
     if(col < 0) {
 		if(instrType == READ)
 			curXact.transType = BUS_RD;
@@ -209,6 +210,12 @@ transaction mesiCache::generateTransaction(unsigned addr, int instrType, int prI
 	}
     else {
         switch(_cacheBlocks[row][col].blockStatus) {
+		case cacheBlock::INVALID:
+			if(instrType == WRITE)
+				curXact.transType = BUS_RD_X;
+			else if (instrType == READ)
+				curXact.transType = BUS_RD;
+			break;
         case cacheBlock::SHARED:
 			if(instrType == WRITE)
                 curXact.transType = BUS_RD_X;
