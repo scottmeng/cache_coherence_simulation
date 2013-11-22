@@ -134,9 +134,9 @@ int main(int argc, char * argv[]) {
 	protocol = "DRAGON";
 	inputFile = "FFT";
 	noProcessors = 2;
-	cacheSize = 1024;
+	cacheSize = 32768;
 	associativity = 4;
-	blockSize = 8;
+	blockSize = 128;
 
 	// ================ for debug purpose only ====================
 
@@ -242,20 +242,29 @@ int main(int argc, char * argv[]) {
 					}
 
 					// make necessary state transition
-					// and generate data bus request type
 					int requestType = caches[i].otherChangeState(curTrans.addr, curTrans.transType, cycle);
-
+					
+					/*
 					if(requestType == FLUSH) {
 						busRequest flushRequest(curTrans.prIndex, curTrans.addr, true);
 						requests.push_back(flushRequest);
-					}
+					}*/
 				}
 			}
 
 			// for the origin processor
+			// make state transition and unlock origin processor
+			caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+			caches[curTrans.prIndex].blocked = false;
+
+			/*
+
+			// for the origin processor
 			// if cache block exists, make state transition
+			// unlock origin processor
 			if(caches[curTrans.prIndex].isCacheHit(curTrans.addr)) {
 				caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+				caches[curTrans.prIndex].blocked = false;
 			} else {
 				numOfDataMisses[curTrans.prIndex]++;
 				// if no caches contain the copy
@@ -265,6 +274,8 @@ int main(int argc, char * argv[]) {
 					requests.push_back(fetchRequest);
 				}
 			}
+
+			*/
 		}
 
 		// for every processor
@@ -313,21 +324,33 @@ int main(int argc, char * argv[]) {
 
 			numOfDataAccesses[prIndex]++;
 
-			// the instruction is confirmed to be a memory instruction
-			// and should generate a bus transaction 
-			transaction trans = caches[prIndex].generateTransaction(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, prIndex);
+			// if cache hit
+			// generate bus transaction
+			if(caches[prIndex].isCacheHit(curInstrs[prIndex].addr)) {
+				transaction trans = caches[prIndex].generateTransaction(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, prIndex);
 
-			// if no transaction is needed
-			// change state immediately
-			if(trans.transType == -1) {
-				caches[prIndex].selfChangeState(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, false, cycle);
-				continue;
+				// if no transaction is needed
+				// change state immediately
+				if(trans.transType == -1) {
+					caches[prIndex].selfChangeState(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, false, cycle);
+				} else {
+					// otherwise push transaction onto the bus and notify other caches in order
+					// block the corresponding cache
+					transactions.push(trans);
+					caches[prIndex].blocked = true;
+				}
+			} else {
+				numOfDataMisses[prIndex]++;
+				// if cache miss
+				// generate data bus request
+				busRequest request;
+				request.addr = curInstrs[prIndex].addr;
+				request.prIndex = prIndex;
+
+				caches[prIndex].blocked = true;
+
+				requests.push_back(request);
 			}
-
-			// otherwise push transaction onto the bus and notify other caches in order
-			// block the corresponding cache
-			transactions.push(trans);
-			caches[prIndex].blocked = true;
 		}
 
 		// randomize the sequence of bus requests
@@ -344,6 +367,28 @@ int main(int argc, char * argv[]) {
 			if(inBuffer.size() > 0) {
 				processingRequest = inBuffer.front();
 				inBuffer.pop();
+
+				// check if other caches can supply the same copy
+				if(processingRequest.countDown == 0) {
+					bool isShared = false;
+
+					for(int i = 0; i < noProcessors; i++) {
+						if(i != processingRequest.prIndex) {
+							if(caches[i].isCacheHit(processingRequest.addr)) {
+								isShared = true;
+							}
+						}
+					}
+
+					// both flush and fetch takes 10 cycles
+					if(isShared) {
+						processingRequest.countDown = 10;
+						processingRequest.fromCache = true;
+					} else {
+						processingRequest.countDown = 10;
+						processingRequest.fromCache = false;
+					}
+				}
 			}
 		}
 
@@ -351,8 +396,21 @@ int main(int argc, char * argv[]) {
 		if(processingRequest.countDown > 0 ) {
 			processingRequest.countDown -= 1;
 
-			// a new data request is just completed
-			if(processingRequest.countDown == 0) {
+			// flush takes place, making data available on data bus
+			if(processingRequest.countDown == 9 && processingRequest.fromCache == true) {
+				// issue bus transaction
+				transaction trans = caches[processingRequest.prIndex].generateTransaction(curInstrs[processingRequest.prIndex].addr, curInstrs[processingRequest.prIndex].instrType, processingRequest.prIndex);
+				transactions.push(trans);
+			}
+
+			// a new fetch from memory request is just completed
+			if(processingRequest.countDown == 0 && processingRequest.fromCache == false) {
+				
+				// issue bus transaction
+				transaction trans = caches[processingRequest.prIndex].generateTransaction(curInstrs[processingRequest.prIndex].addr, curInstrs[processingRequest.prIndex].instrType, processingRequest.prIndex);
+				transactions.push(trans);
+
+				/*
 				bool isShared = false;
 
 				for(int i = 0; i < noProcessors; i++) {
@@ -367,6 +425,7 @@ int main(int argc, char * argv[]) {
 				// and unlock the cache
 				caches[processingRequest.prIndex].selfChangeState(processingRequest.addr, curInstrs[processingRequest.prIndex].instrType, isShared, cycle);
 				caches[processingRequest.prIndex].blocked = false;
+				*/
 			}
 		}
 	}
