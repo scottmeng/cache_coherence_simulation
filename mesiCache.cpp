@@ -150,6 +150,7 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
             _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+        }
     }
     
 }
