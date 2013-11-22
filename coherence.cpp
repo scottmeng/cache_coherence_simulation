@@ -302,8 +302,10 @@ int main(int argc, char * argv[]) {
 				continue;
 			}
 
+            
 			numOfInstructions[prIndex]++;
-
+            if(numOfInstructions[prIndex]>50000)
+                printf("processor %d numOfInstr %d\n", prIndex, numOfInstructions[prIndex]);
 			// displaying progress bar
 			if((numOfInstructions[prIndex] % 100000) == 0) {
 				printf("-");
@@ -377,7 +379,7 @@ int main(int argc, char * argv[]) {
 
 	// output statistics
 	for(int i = 0; i < noProcessors; i++) {
-		printf("Statistics for processor #%d:\n", i);
+		printf("\nStatistics for processor #%d:\n", i);
 		printf("Total cycle is: %d\n", numOfCycles[i]);
 		printf("Total number of data access is: %d\n", numOfDataAccesses[i]);
 		printf("Total number of data miss is: %d\n", numOfDataMisses[i]);
