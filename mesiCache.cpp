@@ -149,7 +149,7 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
         // Only consider the write instruction, as read won't change the state in its own blocks
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
-            _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+            _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
         }
     }
     

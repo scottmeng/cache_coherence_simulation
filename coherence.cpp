@@ -198,13 +198,13 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	vector<dragonCache> caches;
+	vector<mesiCache> caches;
 	vector<instruction> curInstrs;
 	vector<bool> finished;
 
 	// initialize caches, instructions and performance statistics
 	for(int i = 0; i < noProcessors; i++) {
-		dragonCache simpleCache(cacheSize, blockSize, associativity);
+		mesiCache simpleCache(cacheSize, blockSize, associativity);
 		caches.push_back(simpleCache);
 
 		instruction curInstr;
