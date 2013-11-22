@@ -256,6 +256,7 @@ int main(int argc, char * argv[]) {
 			// if cache block exists, make state transition
 			if(caches[curTrans.prIndex].isCacheHit(curTrans.addr)) {
 				caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+                caches[curTrans.prIndex].blocked = false;
 			} else {
 				numOfDataMisses[curTrans.prIndex]++;
 				// if no caches contain the copy
@@ -291,6 +292,9 @@ int main(int argc, char * argv[]) {
 					for(int i = 0; i < noProcessors; i++) {
 						if(!finished[i]) {
 							completed = false;
+                            // Unblock the other cache
+                            // caches[i].blocked = false;
+                            break;
 						}
 					}
 				}
