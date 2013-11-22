@@ -118,7 +118,8 @@ int main(int argc, char * argv[]) {
 	// performance statistics
 	bool completed = false;
 	int cycle = 0;
-	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses, numOfInstructions;
+	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses, numOfInstructions; 
+	int numOfAddrTraffic = 0, numOfDataTraffic = 0;
 
 	// data and address buses shared between memory and cache
 	queue<busRequest> inBuffer;
@@ -228,6 +229,8 @@ int main(int argc, char * argv[]) {
 		if(transactions.size() > 0) {
 			transaction curTrans = transactions.front();
 			transactions.pop();
+
+			numOfAddrTraffic += 1;
 
 			bool isShared = false;
 			bool isModified = false;
@@ -398,6 +401,10 @@ int main(int argc, char * argv[]) {
 
 			// flush takes place, making data available on data bus
 			if(processingRequest.countDown == 9 && processingRequest.fromCache == true) {
+				
+				// flush only takes one data traffic
+				numOfDataTraffic += 1;
+
 				// issue bus transaction
 				transaction trans = caches[processingRequest.prIndex].generateTransaction(curInstrs[processingRequest.prIndex].addr, curInstrs[processingRequest.prIndex].instrType, processingRequest.prIndex);
 				transactions.push(trans);
@@ -406,6 +413,9 @@ int main(int argc, char * argv[]) {
 			// a new fetch from memory request is just completed
 			if(processingRequest.countDown == 0 && processingRequest.fromCache == false) {
 				
+				// fetch takes one data traffic
+				numOfDataTraffic += 1;
+
 				// issue bus transaction
 				transaction trans = caches[processingRequest.prIndex].generateTransaction(curInstrs[processingRequest.prIndex].addr, curInstrs[processingRequest.prIndex].instrType, processingRequest.prIndex);
 				transactions.push(trans);
@@ -431,12 +441,20 @@ int main(int argc, char * argv[]) {
 	}
 
 	// output statistics
+	int totalNumOfDataAccesses = 0;
+
 	for(int i = 0; i < noProcessors; i++) {
-		printf("Statistics for processor #%d:\n", i);
-		printf("Total cycle is: %d\n", numOfCycles[i]);
+		printf("\nStatistics for processor #%d:\n", i);
+		printf("Execution cycle is: %d\n", numOfCycles[i]);
 		printf("Total number of data access is: %d\n", numOfDataAccesses[i]);
+		totalNumOfDataAccesses += numOfDataAccesses[i];
 		printf("Total number of data miss is: %d\n", numOfDataMisses[i]);
+		printf("Miss rate is: %.4f\n", ((double)numOfDataMisses[i]/numOfDataAccesses[i]));
 	}
+
+	printf("\n==================================\n");
+	printf("Address traffic per access is %.4f\n", ((double)numOfAddrTraffic/totalNumOfDataAccesses));
+	printf("Data traffic per access is %.4f\n", ((double)numOfDataTraffic/totalNumOfDataAccesses));
 
 	// close files
 	for(int i = 0; i < noProcessors; i++) {
