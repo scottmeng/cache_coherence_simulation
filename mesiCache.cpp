@@ -121,7 +121,10 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
 	// If the copy is not in the cache
     if(col < 0) {
         for(int i = 0; i < _width; i++) {
-            if(minLRU > _cacheBlocks[row][i].lru) {
+            if(_cacheBlocks[row][i].blockStatus == cacheBlock::INVALID) {
+                changeBlock = i;
+                break;
+            }else if(minLRU > _cacheBlocks[row][i].lru) {
                 minLRU = _cacheBlocks[row][i].lru;
                 changeBlock = i;
             }
@@ -137,10 +140,7 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
             } else {
                 _cacheBlocks[row][changeBlock].tag = tag;
-                if(isShared)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-                else
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+                _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             }
         }  
     // Else the copy is in the cache
@@ -149,15 +149,8 @@ void mesiCache::selfChangeState(unsigned addr, int instrType, bool isShared, int
         // Only consider the write instruction, as read won't change the state in its own blocks
         if(instrType == WRITE) {
             _cacheBlocks[row][col].tag = tag;
-            if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::INVALID)
-				_cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-			else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::EXCLUSIVE)
-                _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::SHARED) 
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            else if(_cacheBlocks[row][changeBlock].blockStatus == cacheBlock::MODIFIED)
-                    _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
-            }
+            _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
+        }
     }
     
 }
@@ -174,8 +167,11 @@ int mesiCache::otherChangeState(unsigned addr, int transType, int cycle){
     if(col >= 0 && _cacheBlocks[row][col].blockStatus != cacheBlock::INVALID) {
         switch(transType){
         case BUS_RD:
-            _cacheBlocks[row][col].blockStatus = cacheBlock::SHARED;
-			busRequestType = FLUSH;
+            if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE ||
+                _cacheBlocks[row][col].blockStatus == cacheBlock::MODIFIED) {
+                _cacheBlocks[row][col].blockStatus = cacheBlock::SHARED;
+			    busRequestType = FLUSH;
+            }
 			break;
 		case BUS_RD_X:
 			if (_cacheBlocks[row][col].blockStatus !=cacheBlock::SHARED)
