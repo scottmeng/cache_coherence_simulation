@@ -23,7 +23,7 @@ dragonCache::dragonCache(int cacheSize, int blockSize, int associativity) {
 	blocked = false;
 }
 
-void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, int cycle) {
+bool dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, int cycle) {
     int row = getRowNum(addr);
     int col = getColNum(addr);
     int tag = (addr / (_blockSize / 2)) / _height;
@@ -49,8 +49,10 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::EXCLUSIVE;
             } else {
                 _cacheBlocks[row][changeBlock].tag = tag;
-                if(isShared)
+                if(isShared){
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::SHAREDMODIFIED;
+					return true;
+				}
                 else
                     _cacheBlocks[row][changeBlock].blockStatus = cacheBlock::MODIFIED;
             }
@@ -65,16 +67,22 @@ void dragonCache::selfChangeState(unsigned addr, int instrType, bool isShared, i
             if(_cacheBlocks[row][col].blockStatus == cacheBlock::EXCLUSIVE)
                 _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
             else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDCLEAN) {
-                if(isShared)
+                if(isShared){
                     _cacheBlocks[row][col].blockStatus = cacheBlock::SHAREDMODIFIED;
-                else
+				}
+                else{
                     _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+					return true;
+				}
             } else if(_cacheBlocks[row][col].blockStatus == cacheBlock::SHAREDMODIFIED) {
                 if(!isShared)
                     _cacheBlocks[row][col].blockStatus = cacheBlock::MODIFIED;
+					return false;
+				return true;
             }
         }
     }
+	return false;
 }
 
 int dragonCache::otherChangeState(unsigned addr, int transType, int cycle) {

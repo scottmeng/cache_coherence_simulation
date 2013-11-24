@@ -133,8 +133,8 @@ int main(int argc, char * argv[]) {
 	// ================ for debug purpose only ====================
 
 	protocol = "DRAGON";
-	inputFile = "FFT";
-	noProcessors = 8;
+	inputFile = "WEATHER";
+	noProcessors = 2;
 	cacheSize = 32768;
 	associativity = 4;
 	blockSize = 128;
