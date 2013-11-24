@@ -132,12 +132,12 @@ int main(int argc, char * argv[]) {
 
 	// ================ for debug purpose only ====================
 
-	protocol = "DRAGON";
+	protocol = "MESI";
 	inputFile = "FFT";
 	noProcessors = 2;
-	cacheSize = 32768;
+	cacheSize = 1024;
 	associativity = 4;
-	blockSize = 128;
+	blockSize = 8;
 
 	// ================ for debug purpose only ====================
 
