@@ -132,12 +132,12 @@ int main(int argc, char * argv[]) {
 
 	// ================ for debug purpose only ====================
 
-	protocol = "DRAGON";
+	protocol = "MESI";
 	inputFile = "FFT";
-	noProcessors = 8;
+	noProcessors = 2;
 	cacheSize = 32768;
-	associativity = 4;
-	blockSize = 128;
+	associativity = 1;
+	blockSize = 8;
 
 	// ================ for debug purpose only ====================
 
@@ -440,6 +440,8 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
+   
+
 	// output statistics
 	int totalNumOfDataAccesses = 0;
 
@@ -451,10 +453,13 @@ int main(int argc, char * argv[]) {
 		printf("Total number of data miss is: %d\n", numOfDataMisses[i]);
 		printf("Miss rate is: %.4f\n", ((double)numOfDataMisses[i]/numOfDataAccesses[i]));
 	}
-
+    // Convert address traffic into byte per access
+    double addrTraffic = ((double)numOfAddrTraffic/totalNumOfDataAccesses) * 4;
+    // Convert data traffic into byte per access
+    double dataTraffic = ((double)numOfDataTraffic/totalNumOfDataAccesses) * 4;
 	printf("\n==================================\n");
-	printf("Address traffic per access is %.4f\n", ((double)numOfAddrTraffic/totalNumOfDataAccesses));
-	printf("Data traffic per access is %.4f\n", ((double)numOfDataTraffic/totalNumOfDataAccesses));
+	printf("Address traffic per access is %.4f\n", addrTraffic);
+	printf("Data traffic per access is %.4f\n", dataTraffic);
 
 	// close files
 	for(int i = 0; i < noProcessors; i++) {
