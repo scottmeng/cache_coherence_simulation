@@ -119,7 +119,7 @@ int main(int argc, char * argv[]) {
 	bool completed = false;
 	int cycle = 0;
 	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses, numOfInstructions; 
-	int numOfAddrTraffic = 0, numOfDataTraffic = 0;
+	int numOfAddrTraffic = 0, numOfDataTraffic = 0, numberOfOtherData = 0;
 
 	// data and address buses shared between memory and cache
 	queue<busRequest> inBuffer;
@@ -198,13 +198,13 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	vector<mesiCache> caches;
+	vector<dragonCache> caches;
 	vector<instruction> curInstrs;
 	vector<bool> finished;
 
 	// initialize caches, instructions and performance statistics
 	for(int i = 0; i < noProcessors; i++) {
-		mesiCache simpleCache(cacheSize, blockSize, associativity);
+		dragonCache simpleCache(cacheSize, blockSize, associativity);
 		caches.push_back(simpleCache);
 
 		instruction curInstr;
@@ -257,7 +257,8 @@ int main(int argc, char * argv[]) {
 
 			// for the origin processor
 			// make state transition and unlock origin processor
-			caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+			if(caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle)==true)
+				numberOfOtherData += 1;
 			caches[curTrans.prIndex].blocked = false;
 
 			/*
@@ -335,7 +336,8 @@ int main(int argc, char * argv[]) {
 				// if no transaction is needed
 				// change state immediately
 				if(trans.transType == -1) {
-					caches[prIndex].selfChangeState(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, false, cycle);
+					if(caches[prIndex].selfChangeState(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, false, cycle)==true)
+						numberOfOtherData +=1;
 				} else {
 					// otherwise push transaction onto the bus and notify other caches in order
 					// block the corresponding cache
@@ -456,7 +458,11 @@ int main(int argc, char * argv[]) {
     // Convert address traffic into byte per access
     double addrTraffic = ((double)numOfAddrTraffic/totalNumOfDataAccesses) * 4;
     // Convert data traffic into byte per access
-    double dataTraffic = ((double)numOfDataTraffic/totalNumOfDataAccesses) * 4;
+	double dataTraffic;
+	if(protocol=="MESI")
+		dataTraffic = ((double)numOfDataTraffic/totalNumOfDataAccesses) * 4;
+	else if (protocol == "DRAGON")
+		dataTraffic = (double)(numOfDataTraffic* 4+numberOfOtherData*2)/totalNumOfDataAccesses ;
 	printf("\n==================================\n");
 	printf("Address traffic per access is %.4f\n", addrTraffic);
 	printf("Data traffic per access is %.4f\n", dataTraffic);
