@@ -75,8 +75,8 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 
 	if((usrNoProcessors != 1) && 
 	   (usrNoProcessors != 2) &&
-	   (usrNoProcessors != 3) &&
-	   (usrNoProcessors != 4)) {
+	   (usrNoProcessors != 4) &&
+	   (usrNoProcessors != 8)) {
 		printf("Number of processors must be 1, 2, 4 or 8. Please try again.\n");
 		return false;
 	}
@@ -132,12 +132,12 @@ int main(int argc, char * argv[]) {
 
 	// ================ for debug purpose only ====================
 
-	protocol = "MESI";
+	protocol = "DRAGON";
 	inputFile = "FFT";
-	noProcessors = 2;
-	cacheSize = 1024;
+	noProcessors = 8;
+	cacheSize = 32768;
 	associativity = 4;
-	blockSize = 8;
+	blockSize = 128;
 
 	// ================ for debug purpose only ====================
 
