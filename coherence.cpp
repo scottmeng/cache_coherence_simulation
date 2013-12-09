@@ -1,7 +1,7 @@
 // coherence.cpp
 // Created by: Long Jinghan, Meng Kaizhi, Zhou Ruofan (National University of Singapore)
 // Created on: 7 Nov 2013
-// Last edited on: 7 Nov 2013
+// Last edited on: 21 Nov 2013
 // All rights reserved
 
 #include <stdio.h>
@@ -9,18 +9,15 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <queue>
 
 #include "cache.h"
 #include "mesiCache.h"
+#include "transaction.h"
+#include "dragonCache.h"
+#include "constants.h"
 
 using namespace std;
-
-#define DRAGON_PROTOCOL "DRAGON"
-#define MESI_PROTOCOL "MESI"
-
-#define FTT_FILE "FTT"
-#define WEATHER_FILE "WEATHER"
-
 
 struct instruction {
 	int instrType;
@@ -29,6 +26,32 @@ struct instruction {
 	instruction() {
 		instrType = 0;
 		addr = 0;
+	}
+};
+
+struct busRequest{
+	int prIndex;
+	unsigned addr;
+	int countDown;
+	bool fromCache;
+
+	busRequest(){
+		prIndex = -1;
+		addr = 0;
+		fromCache = false;
+		countDown = 0;
+	}
+
+	busRequest(int inPrIndex, unsigned inAddr, bool inFromCache) {
+		prIndex = inPrIndex;
+		addr = inAddr;
+		fromCache = inFromCache;
+
+		if(fromCache) {
+			countDown = 1;
+		} else {
+			countDown = 10;
+		}
 	}
 };
 
@@ -52,8 +75,8 @@ bool areInputsValid(char * usrProtocol, char * usrInputFile, int usrNoProcessors
 
 	if((usrNoProcessors != 1) && 
 	   (usrNoProcessors != 2) &&
-	   (usrNoProcessors != 3) &&
-	   (usrNoProcessors != 4)) {
+	   (usrNoProcessors != 4) &&
+	   (usrNoProcessors != 8)) {
 		printf("Number of processors must be 1, 2, 4 or 8. Please try again.\n");
 		return false;
 	}
@@ -93,17 +116,27 @@ int main(int argc, char * argv[]) {
 	bool isDragon = false, isWeather = false;
 
 	// performance statistics
+	bool completed = false;
+	int cycle = 0;
+	vector<int> numOfCycles, numOfDataAccesses, numOfDataMisses, numOfInstructions; 
+	int numOfAddrTraffic = 0, numOfDataTraffic = 0, numberOfOtherData = 0;
 
-	// count of CPU cycles
-	int wait = 0, cycle = 0;
+	// data and address buses shared between memory and cache
+	queue<busRequest> inBuffer;
+	busRequest processingRequest;
+	
+	// bus transaction queue
+	queue<transaction> transactions;
+
+	// bus transaction request
 
 	// ================ for debug purpose only ====================
 
-	protocol = "DRAGON";
+	protocol = "MESI";
 	inputFile = "FFT";
-	noProcessors = 1;
-	cacheSize = 1024;
-	associativity = 4;
+	noProcessors = 2;
+	cacheSize = 32768;
+	associativity = 1;
 	blockSize = 8;
 
 	// ================ for debug purpose only ====================
@@ -165,66 +198,282 @@ int main(int argc, char * argv[]) {
 		}
 	}
 
-	mesiCache simpleCache(cacheSize, blockSize, associativity);
-	instruction curInstr;
+	vector<dragonCache> caches;
+	vector<instruction> curInstrs;
+	vector<bool> finished;
 
-	while(1) {
+	// initialize caches, instructions and performance statistics
+	for(int i = 0; i < noProcessors; i++) {
+		dragonCache simpleCache(cacheSize, blockSize, associativity);
+		caches.push_back(simpleCache);
+
+		instruction curInstr;
+		curInstrs.push_back(curInstr);
+
+		finished.push_back(false);
+		numOfCycles.push_back(0);
+		numOfDataAccesses.push_back(0);
+		numOfDataMisses.push_back(0);
+		numOfInstructions.push_back(0);
+	}
+
+	while(!completed) {
 		
 		// new CPU cycle
 		cycle += 1;
 
-		// empty cycles
-		if(wait > 0 ) {
-			wait -= 1;
-			continue;
+		// temperary storage for bus requests (for randomnization)
+		vector<busRequest> requests;
+
+		// dequeue bus transaction
+		if(transactions.size() > 0) {
+			transaction curTrans = transactions.front();
+			transactions.pop();
+
+			numOfAddrTraffic += 1;
+
+			bool isShared = false;
+			bool isModified = false;
+
+			// for each other processor
+			for(int i = 0; i < noProcessors; i++) {
+				if(i != curTrans.prIndex) {
+				
+					// check if any of the caches contain the same cache block
+					if(caches[i].isCacheHit(curTrans.addr)) {
+						isShared = true;
+					}
+
+					// make necessary state transition
+					int requestType = caches[i].otherChangeState(curTrans.addr, curTrans.transType, cycle);
+					
+					/*
+					if(requestType == FLUSH) {
+						busRequest flushRequest(curTrans.prIndex, curTrans.addr, true);
+						requests.push_back(flushRequest);
+					}*/
+				}
+			}
+
+			// for the origin processor
+			// make state transition and unlock origin processor
+			if(caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle)==true)
+				numberOfOtherData += 1;
+			caches[curTrans.prIndex].blocked = false;
+
+			/*
+
+			// for the origin processor
+			// if cache block exists, make state transition
+			// unlock origin processor
+			if(caches[curTrans.prIndex].isCacheHit(curTrans.addr)) {
+				caches[curTrans.prIndex].selfChangeState(curTrans.addr, curInstrs[curTrans.prIndex].instrType, isShared, cycle);
+				caches[curTrans.prIndex].blocked = false;
+			} else {
+				numOfDataMisses[curTrans.prIndex]++;
+				// if no caches contain the copy
+				// fetch from memory
+				if(!isShared) {
+					busRequest fetchRequest(curTrans.prIndex, curTrans.addr, false);
+					requests.push_back(fetchRequest);
+				}
+			}
+
+			*/
 		}
 
-		// read single instruction from each processor
-		//instrType = readInstrType(files[0]);
-		//addr = readAddr(files[0]);
-		if(!readInstr(files[0], curInstr)) {
-			break;
+		// for every processor
+ 		for(int prIndex = 0; prIndex < noProcessors; prIndex ++) {
+			
+			// if the processor is still waiting for data
+			// skip this cycle
+			if(caches[prIndex].blocked) {
+				continue;
+			}
+
+			// read single instruction from each processor
+			// if there is no more instruction
+			if(!readInstr(files[prIndex], curInstrs[prIndex])) {
+				// if processor is not previously finished
+				// record down the total number of execution cycles
+				if(!finished[prIndex]) {
+					numOfCycles[prIndex] = cycle;
+					finished[prIndex] = true;
+
+					// check if all processors have completed
+					completed = true;
+
+					for(int i = 0; i < noProcessors; i++) {
+						if(!finished[i]) {
+							completed = false;
+						}
+					}
+				}
+
+				continue;
+			}
+
+			numOfInstructions[prIndex]++;
+
+			// displaying progress bar
+			if((numOfInstructions[prIndex] % 100000) == 0) {
+				printf("-");
+			}
+
+			// if it is instruction reference 
+			// simply increment cycle counter
+			if(curInstrs[prIndex].instrType == 0) {
+				continue;
+			}
+
+			numOfDataAccesses[prIndex]++;
+
+			// if cache hit
+			// generate bus transaction
+			if(caches[prIndex].isCacheHit(curInstrs[prIndex].addr)) {
+				transaction trans = caches[prIndex].generateTransaction(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, prIndex);
+
+				// if no transaction is needed
+				// change state immediately
+				if(trans.transType == -1) {
+					if(caches[prIndex].selfChangeState(curInstrs[prIndex].addr, curInstrs[prIndex].instrType, false, cycle)==true)
+						numberOfOtherData +=1;
+				} else {
+					// otherwise push transaction onto the bus and notify other caches in order
+					// block the corresponding cache
+					transactions.push(trans);
+					caches[prIndex].blocked = true;
+				}
+			} else {
+				numOfDataMisses[prIndex]++;
+				// if cache miss
+				// generate data bus request
+				busRequest request;
+				request.addr = curInstrs[prIndex].addr;
+				request.prIndex = prIndex;
+
+				caches[prIndex].blocked = true;
+
+				requests.push_back(request);
+			}
+		}
+
+		// randomize the sequence of bus requests
+		// and push them into the queue
+		while(requests.size() > 0){
+			int index = rand()%(requests.size());
+			inBuffer.push(requests[index]);
+			requests.erase(requests.begin()+index);
 		}
 		
-		// if it is instruction reference 
-		// simply increment cycle counter
-		if(curInstr.instrType == 0) {
-			continue;
-		}
+		// if bus is free
+		if(processingRequest.countDown == 0) {
+			// put one new bus request onto the address bus
+			if(inBuffer.size() > 0) {
+				processingRequest = inBuffer.front();
+				inBuffer.pop();
 
-		// if it is memory read
-		// check isCacheHit
-		// add time penalty
-		// swap in cache block
-		if(curInstr.instrType == 2) {
-			if(!simpleCache.isReadHit(curInstr.addr, cycle)) {
-				simpleCache.readCache(curInstr.addr, cycle);
-				wait = 10;
-				continue;
+				// check if other caches can supply the same copy
+				if(processingRequest.countDown == 0) {
+					bool isShared = false;
+
+					for(int i = 0; i < noProcessors; i++) {
+						if(i != processingRequest.prIndex) {
+							if(caches[i].isCacheHit(processingRequest.addr)) {
+								isShared = true;
+							}
+						}
+					}
+
+					// both flush and fetch takes 10 cycles
+					if(isShared) {
+						processingRequest.countDown = 10;
+						processingRequest.fromCache = true;
+					} else {
+						processingRequest.countDown = 10;
+						processingRequest.fromCache = false;
+					}
+				}
 			}
 		}
 
-		// if it is memory write
-		// check isCacheHit
-		// add time penalty
-		// swap in cache block
-		// modify block status
-		if(curInstr.instrType == 3) {
-			if(!simpleCache.isWriteHit(curInstr.addr,cycle)) {
-				simpleCache.writeCache(curInstr.addr,cycle);
-				wait = 10;
-				continue;
+		// if data bus is busy, count down by 1
+		if(processingRequest.countDown > 0 ) {
+			processingRequest.countDown -= 1;
+
+			// flush takes place, making data available on data bus
+			if(processingRequest.countDown == 9 && processingRequest.fromCache == true) {
+				
+				// flush only takes one data traffic
+				numOfDataTraffic += 1;
+
+				// issue bus transaction
+				transaction trans = caches[processingRequest.prIndex].generateTransaction(curInstrs[processingRequest.prIndex].addr, curInstrs[processingRequest.prIndex].instrType, processingRequest.prIndex);
+				transactions.push(trans);
+			}
+
+			// a new fetch from memory request is just completed
+			if(processingRequest.countDown == 0 && processingRequest.fromCache == false) {
+				
+				// fetch takes one data traffic
+				numOfDataTraffic += 1;
+
+				// issue bus transaction
+				transaction trans = caches[processingRequest.prIndex].generateTransaction(curInstrs[processingRequest.prIndex].addr, curInstrs[processingRequest.prIndex].instrType, processingRequest.prIndex);
+				transactions.push(trans);
+
+				/*
+				bool isShared = false;
+
+				for(int i = 0; i < noProcessors; i++) {
+					if(i != processingRequest.prIndex) {
+						if(caches[i].isCacheHit(processingRequest.addr)) {
+							isShared = true;
+						}
+					}
+				}
+
+				// load cache block in the corresponding cache
+				// and unlock the cache
+				caches[processingRequest.prIndex].selfChangeState(processingRequest.addr, curInstrs[processingRequest.prIndex].instrType, isShared, cycle);
+				caches[processingRequest.prIndex].blocked = false;
+				*/
 			}
 		}
 	}
+
+   
 
 	// output statistics
+	int totalNumOfDataAccesses = 0;
 
+	for(int i = 0; i < noProcessors; i++) {
+		printf("\nStatistics for processor #%d:\n", i);
+		printf("Execution cycle is: %d\n", numOfCycles[i]);
+		printf("Total number of data access is: %d\n", numOfDataAccesses[i]);
+		totalNumOfDataAccesses += numOfDataAccesses[i];
+		printf("Total number of data miss is: %d\n", numOfDataMisses[i]);
+		printf("Miss rate is: %.4f\n", ((double)numOfDataMisses[i]/numOfDataAccesses[i]));
+	}
+    // Convert address traffic into byte per access
+    double addrTraffic = ((double)numOfAddrTraffic/totalNumOfDataAccesses) * 4;
+    // Convert data traffic into byte per access
+	double dataTraffic;
+	if(protocol=="MESI")
+		dataTraffic = ((double)numOfDataTraffic/totalNumOfDataAccesses) * 4;
+	else if (protocol == "DRAGON")
+		dataTraffic = (double)(numOfDataTraffic* 4+numberOfOtherData*2)/totalNumOfDataAccesses ;
+	printf("\n==================================\n");
+	printf("Address traffic per access is %.4f\n", addrTraffic);
+	printf("Data traffic per access is %.4f\n", dataTraffic);
 
 	// close files
-	for(int i=1; i<=noProcessors; i++) {
+	for(int i = 0; i < noProcessors; i++) {
 		fclose(files[i]);
 	}
+
+	// hold screen
+	while(1) {}
 
 	return 1;
 }

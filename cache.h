@@ -9,31 +9,31 @@
 
 #include <vector>
 #include "cacheBlock.h"
+#include "constants.h"
 
 using namespace std;
 
 class cache{
-	protected:
-		int _cacheSize;
-		int _blockSize;
-		int _associativity;
+    protected:
+        int _cacheSize;
+        int _blockSize;
+        int _associativity;
 
-		int _height;
-		int _width;
-		int _numOfBlocks;		
+        int _height;
+        int _width;
+        int _numOfBlocks;		
+        vector<vector <cacheBlock> > _cacheBlocks;
 
-		vector<vector <cacheBlock> > _cacheBlocks;
+        int getRowIndex(unsigned addr);
+        int getColNum(unsigned addr);
+        int getRowNum(unsigned addr);
 
-		int getRowIndex(int addr);
+    public:
+        cache() {}
+        cache(int cacheSize, int blockSize, int associativity);
 
-	public:
-		cache() {}
-		cache(int cacheSize, int blockSize, int associativity);
-
-		bool virtual isReadHit(int addr, int cycle);
-		bool virtual isWriteHit(int addr, int cycle);
-		void virtual readCache(int addr, int cycle);
-		void virtual writeCache(int addr, int cycle);
+        bool isCacheHit(unsigned addr);
+		bool blocked;
 };
 
 #endif

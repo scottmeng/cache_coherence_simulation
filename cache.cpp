@@ -7,6 +7,8 @@
 #include <vector>
 #include "cache.h"
 
+using namespace std;
+
 cache::cache(int cacheSize, int blockSize, int associativity) {
     _cacheSize = cacheSize;
     _blockSize = blockSize;
@@ -18,26 +20,41 @@ cache::cache(int cacheSize, int blockSize, int associativity) {
     _height = _numOfBlocks / _associativity;
 
     // initialize all cache blocks using dirty data
-    for(int i = 0; i < _width; i++) {
-        vector<cacheBlock> column;
-        for(int j = 0; j < _height; j++) {
+    for(int i = 0; i < _height; i++) {
+        vector<cacheBlock> row;
+        for(int j = 0; j < _width; j++) {
             cacheBlock dirtyBlock = cacheBlock(_blockSize);
-            column.push_back(dirtyBlock);
+            row.push_back(dirtyBlock);
         }
-        _cacheBlocks.push_back(column);
+        _cacheBlocks.push_back(row);
     }
 }
 
-bool cache::isReadHit(int addr, int cycle) {
-	return false;
+int cache::getColNum(unsigned addr){
+	int tag = (addr / (_blockSize / 2)) / _height;
+	int index = (addr / (_blockSize / 2)) % _height; 
+	for (int i = 0; i< _width; i++){
+		if (tag == _cacheBlocks[index][i].tag )
+			return i;
+	}
+	return -1;
 }
-bool cache::isWriteHit(int addr, int cycle) {
-	return false;
+
+int cache::getRowNum(unsigned addr){
+	return (addr / (_blockSize / 2)) % _height;
 }
-// Assume read miss, put the addr into the cache
-void cache::readCache(int addr, int cycle) {
-	return ;
-}
-void cache::writeCache(int addr, int cycle) {
-	return;
+
+
+bool cache::isCacheHit(unsigned addr) {
+    int index;
+    int tag;
+    index = (addr / (_blockSize / 2)) % _height;
+    tag = (addr / (_blockSize / 2)) / _height;
+
+    for(int i = 0; i < (int)_cacheBlocks[index].size(); i++) {
+        if(tag == _cacheBlocks[index][i].tag && _cacheBlocks[index][i].blockStatus != cacheBlock::INVALID) {
+            return true;
+        }
+    }
+    return false;
 }
